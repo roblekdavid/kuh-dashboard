@@ -1,0 +1,90 @@
+'use client';
+
+import { useState } from 'react';
+import { Calendar, X } from 'lucide-react';
+
+interface DatePickerDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (date: Date) => void;
+  title: string;
+  message: string;
+  defaultDate?: Date;
+}
+
+export default function DatePickerDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  defaultDate
+}: DatePickerDialogProps) {
+  const [selectedDate, setSelectedDate] = useState<string>(
+    defaultDate 
+      ? defaultDate.toISOString().split('T')[0] 
+      : new Date().toISOString().split('T')[0]
+  );
+
+  if (!isOpen) return null;
+
+  const handleConfirm = () => {
+    onConfirm(new Date(selectedDate));
+    onClose();
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" 
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8" 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-2xl font-bold text-gray-800">{title}</h3>
+          <button
+            onClick={onClose}
+            className="bg-gray-200 hover:bg-gray-300 p-2 rounded-xl transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <p className="text-lg text-gray-600 mb-6">{message}</p>
+        
+        {/* Datumswahl */}
+        <div className="mb-8">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Datum auswählen:
+          </label>
+          <div className="relative">
+            <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <button
+            onClick={handleConfirm}
+            className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-lg transition-all active:scale-95 touch-manipulation"
+          >
+            Bestätigen
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-200 text-gray-800 py-4 px-6 rounded-xl font-semibold text-lg hover:bg-gray-300 transition-all active:scale-95 touch-manipulation"
+          >
+            Abbrechen
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
