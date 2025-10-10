@@ -2,23 +2,16 @@ export interface Kuh {
   id: number;
   name: string;
   tiernummer: string;
-  ist_kalbin: boolean;
-  erstes_kalben: string | null;
-  status: string;
+  geburtsdatum: string | null;
   
-  // ERWEITERT
   letzte_brunst: string | null;
   besamung_datum: string | null;
   besamung_versuche: number;
   
-  belegt: string | null;
-  kontrolle: string | null;
   kontroll_status: string | null;
   
   trockengestellt_am: string | null;
   abgekalbt_am: string | null;
-  trockengestellt: boolean;
-  abgekalbt: boolean;
   klauenpflege: boolean;
   aktiv: boolean;
   abgangsdatum: string | null;
@@ -26,8 +19,20 @@ export interface Kuh {
   notizen: string | null;
 }
 
-export interface BestandsMonat {
+export interface BelegungsMonat {
   monat: string;
+  melkend: number;
+  wochen: BelegungsWoche[];
+}
+
+export interface BelegungsWoche {
+  woche: string;
+  melkend: number;
+  tage: BelegungsTag[];
+}
+
+export interface BelegungsTag {
+  tag: string;
   melkend: number;
 }
 
@@ -37,5 +42,12 @@ export interface Dashboard {
   color: string;
   filter?: (kuh: Kuh) => boolean;
   showInfo?: string[];
-  isSpecial?: string;
+  isSpecial?: boolean;
+}
+
+// Grenzwerte für Bestandsplanung (können auf "Alle Kühe" Seite geändert werden)
+export interface Grenzwerte {
+  ideal: number;
+  min: number;
+  max: number;
 }
