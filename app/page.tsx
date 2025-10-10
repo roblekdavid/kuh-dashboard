@@ -21,13 +21,15 @@ import SuccessToast from '@/app/components/dialogs/SuccessToast';
 
 export default function KuhDashboard() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlay, setIsAutoPlay] = useState(true);
+  const [isAutoPlay, setIsAutoPlay] = useState(false);
   const [kuehe, setKuehe] = useState<Kuh[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
-
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  
   const loadKuehe = async () => {
     try {
       const res = await fetch('/api/kuehe');
@@ -52,6 +54,29 @@ export default function KuhDashboard() {
       return () => clearInterval(interval);
     }
   }, [isAutoPlay]);
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setIsAutoPlay(true);
+  }, 30 * 60 * 1000); // 30 Minuten
+
+  return () => clearTimeout(timer);
+}, []);
+// Pause bei Klick/Touch in die App
+useEffect(() => {
+  const handleInteraction = () => {
+    if (isAutoPlay) {
+      setIsAutoPlay(false);
+    }
+  };
+
+  document.addEventListener('click', handleInteraction);
+  document.addEventListener('touchstart', handleInteraction);
+
+  return () => {
+    document.removeEventListener('click', handleInteraction);
+    document.removeEventListener('touchstart', handleInteraction);
+  };
+}, [isAutoPlay]);
 
   const handleUpdate = () => {
     loadKuehe();
@@ -68,6 +93,46 @@ export default function KuhDashboard() {
       setIsFullscreen(false);
     }
   };
+  // Swipe-Gesten
+useEffect(() => {
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      // Nach links wischen = nächstes Dashboard
+      setCurrentSlide((prev) => (prev + 1) % dashboards.length);
+    }
+    if (isRightSwipe) {
+      // Nach rechts wischen = vorheriges Dashboard
+      setCurrentSlide((prev) => (prev - 1 + dashboards.length) % dashboards.length);
+    }
+  };
+
+  document.addEventListener('touchstart', onTouchStart);
+  document.addEventListener('touchmove', onTouchMove);
+  document.addEventListener('touchend', onTouchEnd);
+
+  return () => {
+    document.removeEventListener('touchstart', onTouchStart);
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onTouchEnd);
+  };
+}, [touchStart, touchEnd, currentSlide]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -264,15 +329,15 @@ export default function KuhDashboard() {
         {/* Top Navigation */}
         <div className="flex justify-between items-center mb-6">
           <Link href="/alle-kuehe">
-            <button className="bg-white hover:bg-gray-100 p-3 md:p-4 rounded-2xl shadow-lg transition-all active:scale-95 touch-manipulation flex items-center gap-2">
-              <List className="w-5 h-5 md:w-6 md:h-6" />
-              <span className="hidden md:inline font-semibold">Alle Kühe</span>
+            <button className="bg-white hover:bg-gray-50 p-3 md:p-4 rounded-2xl shadow-xl border-2 border-gray-300 transition-all active:scale-95 touch-manipulation flex items-center gap-2 font-bold">
+              <List className="w-5 h-5 md:w-6 md:h-6 text-gray-700" />
+              <span className="hidden md:inline text-gray-800">Alle Kühe</span>
             </button>
           </Link>
           
           <button
             onClick={toggleFullscreen}
-            className="bg-white hover:bg-gray-100 p-3 md:p-4 rounded-2xl shadow-lg transition-all active:scale-95 touch-manipulation"
+            className="bg-white hover:bg-gray-50 p-3 md:p-4 rounded-2xl shadow-xl border-2 border-gray-300 transition-all active:scale-95 touch-manipulation font-bold text-gray-700"
             title={isFullscreen ? "Fullscreen beenden (ESC)" : "Fullscreen aktivieren"}
           >
             <Maximize className="w-5 h-5 md:w-6 md:h-6" />

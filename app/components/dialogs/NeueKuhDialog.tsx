@@ -98,7 +98,7 @@ export default function NeueKuhDialog({ isOpen, onClose, onSuccess }: NeueKuhDia
       onClick={handleClose}
     >
       <div 
-        className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto" 
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 p-6 sm:p-8 max-h-[90vh] overflow-y-auto" 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">

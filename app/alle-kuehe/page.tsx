@@ -170,7 +170,7 @@ export default function AlleKuehePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 p-2 sm:p-4 md:p-8">
       <div className="max-w-[1920px] mx-auto">
         {/* Header */}
         <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-3xl shadow-2xl p-6 md:p-8 mb-8 text-white">
@@ -253,7 +253,7 @@ export default function AlleKuehePage() {
                 placeholder="Suche nach Name oder Nummer..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white/20 backdrop-blur-sm rounded-xl text-white placeholder-white/60 focus:bg-white/30 transition-all"
+                className="w-full pl-12 pr-4 py-3 bg-gray-800/80 backdrop-blur-sm rounded-xl text-white placeholder-white/80 focus:bg-gray-800/90 transition-all font-semibold text-lg border-2 border-white/20"
               />
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -280,14 +280,14 @@ export default function AlleKuehePage() {
         </div>
 
         {/* Kühe-Liste */}
-        <div className="grid gap-4">
+        <div className="grid gap-4 px-2 sm:px-4">
           {filteredKuehe.map((kuh) => {
             const istKalbin = !kuh.abgekalbt_am;
             const alterMonate = kuh.geburtsdatum ? getAlterInMonaten(parseDate(kuh.geburtsdatum)!) : 0;
             const tageSeitAbkalben = kuh.abgekalbt_am ? getDaysSince(parseDate(kuh.abgekalbt_am)!) : 0;
 
             return (
-              <div key={kuh.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
+              <div key={kuh.id} className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-all overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className={`text-4xl ${istKalbin ? 'bg-pink-100' : 'bg-blue-100'} w-14 h-14 rounded-xl flex items-center justify-center`}>
@@ -317,7 +317,7 @@ export default function AlleKuehePage() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-2 flex-wrap justify-end">
                     {/* Status-Aktionen basierend auf aktuellem Zustand */}
                     {!kuh.letzte_brunst && !kuh.kontroll_status && (
                       <button

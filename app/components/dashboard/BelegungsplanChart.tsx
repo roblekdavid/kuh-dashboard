@@ -12,7 +12,7 @@ interface BelegungsplanChartProps {
 export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
   const [expandedMonths, setExpandedMonths] = useState<Set<number>>(new Set([0]));
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
-  const [grenzwerte, setGrenzwerte] = useState<Grenzwerte>({ ideal: 60, min: 50, max: 70 });
+  const [grenzwerte, setGrenzwerte] = useState<Grenzwerte>({ ideal: 49, min: 42, max: 56 });
 
   // Lade Grenzwerte aus localStorage (werden auf "Alle Kühe" Seite gesetzt)
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-8 shadow-xl">
+    <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl overflow-hidden">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
           Geplante Belegung für die nächsten 6 Monate
@@ -54,23 +54,23 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
         <p className="text-gray-600">
           Durchschnittlich melkende Kühe pro Zeitraum
         </p>
-        <div className="mt-4 flex gap-6 text-sm">
+        <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:gap-6 text-base sm:text-lg font-bold">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-orange-400 rounded"></div>
-            <span>Unter {grenzwerte.min} (Niedrig)</span>
+            <div className="w-5 h-5 bg-orange-400 rounded"></div>
+            <span className="text-gray-800">Unter {grenzwerte.min} (Niedrig)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-400 rounded"></div>
-            <span>{grenzwerte.min}-{grenzwerte.ideal} (Optimal)</span>
+            <div className="w-5 h-5 bg-green-400 rounded"></div>
+            <span className="text-gray-800">{grenzwerte.min}-{grenzwerte.ideal} (Optimal)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-400 rounded"></div>
-            <span>Über {grenzwerte.ideal}</span>
+            <div className="w-5 h-5 bg-blue-400 rounded"></div>
+            <span className="text-gray-800">Über {grenzwerte.ideal}</span>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 px-2 sm:px-0">
         {monate.map((monat, mIndex) => {
           const isExpanded = expandedMonths.has(mIndex);
           const prozent = (monat.melkend / maxMelkend) * 100;
@@ -82,7 +82,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
               {/* Monat */}
               <button
                 onClick={() => toggleMonth(mIndex)}
-                className="w-full p-6 hover:bg-gray-50 transition-colors flex items-center gap-4"
+                className="w-full p-4 md:p-6 hover:bg-gray-50 transition-colors flex items-center gap-3 md:gap-6"
               >
                 <div className="flex-shrink-0">
                   {isExpanded ? (
@@ -92,11 +92,11 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                   )}
                 </div>
                 
-                <div className="w-32 text-left font-semibold text-gray-800">
+                <div className="w-28 md:w-36 text-left font-bold text-gray-800 text-base md:text-lg">
                   {monat.monat}
                 </div>
                 
-                <div className="flex-1 bg-gray-200 rounded-full h-8 relative overflow-hidden">
+                <div className="flex-1 bg-gray-200 rounded-full h-8 md:h-10 relative overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       istNiedrig
@@ -107,15 +107,15 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                     }`}
                     style={{ width: `${prozent}%` }}
                   >
-                    <div className="absolute inset-0 flex items-center justify-end pr-3">
-                      <span className="text-white font-bold drop-shadow-lg">
+                    <div className="absolute inset-0 flex items-center justify-end pr-3 md:pr-4">
+                      <span className="text-white font-bold drop-shadow-lg text-sm md:text-base">
                         {monat.melkend}
                       </span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="w-28 text-left">
+                <div className="w-24 md:w-32 text-left">
                   {istNiedrig && (
                     <span className="text-orange-600 text-sm font-semibold">⚠️ Niedrig</span>
                   )}
@@ -130,7 +130,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
 
               {/* Wochen (aufgeklappt) */}
               {isExpanded && (
-                <div className="bg-gray-50 p-4 space-y-3 border-t-2 border-gray-200">
+                <div className="bg-gray-50 p-3 md:p-5 space-y-2 md:space-y-3 border-t-2 border-gray-200">
                   {monat.wochen.map((woche: any, wIndex: number) => {
                     const weekKey = `${mIndex}-${wIndex}`;
                     const isWeekExpanded = expandedWeeks.has(weekKey);
@@ -140,7 +140,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                       <div key={wIndex}>
                         <button
                           onClick={() => toggleWeek(weekKey)}
-                          className="w-full flex items-center gap-4 ml-9 p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                          className="w-full flex items-center gap-2 sm:gap-4 ml-4 sm:ml-9 p-2 hover:bg-gray-100 rounded-xl transition-colors"
                         >
                           <div className="flex-shrink-0">
                             {isWeekExpanded ? (
@@ -150,11 +150,11 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                             )}
                           </div>
                           
-                          <div className="w-20 text-right text-sm text-gray-600 font-medium">
+                          <div className="w-16 md:w-24 text-right text-sm md:text-base text-gray-600 font-semibold">
                             {woche.woche}
                           </div>
                           
-                          <div className="flex-1 bg-gray-300 rounded-full h-6 relative overflow-hidden">
+                          <div className="flex-1 bg-gray-300 rounded-full h-6 md:h-7 relative overflow-hidden">
                             <div
                               className="h-full bg-gradient-to-r from-blue-300 to-blue-400 rounded-full transition-all duration-500"
                               style={{ width: `${wocheProzent}%` }}
@@ -170,17 +170,17 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
 
                         {/* Tage (aufgeklappt) */}
                         {isWeekExpanded && (
-                          <div className="ml-20 mt-2 space-y-1">
+                          <div className="ml-8 sm:ml-20 mt-2 space-y-1">
                             {woche.tage.map((tag: any, tIndex: number) => {
                               const tagProzent = (tag.melkend / maxMelkend) * 100;
                               
                               return (
                                 <div key={tIndex} className="flex items-center gap-4 p-1">
-                                  <div className="w-16 text-right text-xs text-gray-500">
+                                  <div className="w-12 md:w-20 text-right text-xs md:text-sm text-gray-600 font-medium">
                                     {tag.tag}
                                   </div>
                                   
-                                  <div className="flex-1 bg-gray-300 rounded-full h-4 relative overflow-hidden">
+                                  <div className="flex-1 bg-gray-300 rounded-full h-4 md:h-5 relative overflow-hidden">
                                     <div
                                       className="h-full bg-gradient-to-r from-cyan-300 to-cyan-400 rounded-full"
                                       style={{ width: `${tagProzent}%` }}

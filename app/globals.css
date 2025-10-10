@@ -22,6 +22,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* Verhindert horizontales Scrollen */
+  overflow-x: hidden;
 }
 
 /* Fix für Eingabefelder und Buttons */
@@ -48,4 +50,53 @@ button {
 
 .text-gray-800 {
   color: #1f2937 !important;
+}
+
+/* Mobile Optimierungen */
+@media (max-width: 640px) {
+  /* Verhindert Zoom bei Input-Focus auf iOS */
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="email"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Besseres Touch-Target für Buttons */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Reduziert padding auf kleinen Bildschirmen */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Verhindert dass Karten über den Rand hinausgehen */
+* {
+  box-sizing: border-box;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Bessere Touch-Gesten */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Verhindert Text-Selektion bei Touch */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
