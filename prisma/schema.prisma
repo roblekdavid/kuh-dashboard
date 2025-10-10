@@ -25,11 +25,6 @@ model Kuh {
 
   klauenpflege          Boolean   @default(false)
   
-  // Bestandsverwaltung
-  aktiv                 Boolean   @default(true)
-  abgangsdatum          DateTime?
-  abgangsgrund          String?
-  
   notizen               String?
   
   createdAt             DateTime  @default(now())

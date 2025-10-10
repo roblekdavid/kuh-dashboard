@@ -30,7 +30,7 @@ export default function DashboardHeader({
               {currentDashboard.title}
             </h1>
             <p className="text-xl md:text-2xl opacity-90">
-              {currentDashboard.isSpecial === 'bestand' 
+              {currentDashboard.isSpecial 
                 ? 'Melkende Kühe pro Monat' 
                 : `${filteredCount} ${filteredCount === 1 ? 'Kuh' : 'Kühe'}`
               }

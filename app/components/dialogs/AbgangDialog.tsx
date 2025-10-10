@@ -1,12 +1,13 @@
 'use client';
 
+import { Trash2 } from 'lucide-react';
 import { Kuh } from '@/app/lib/types';
 
 interface AbgangDialogProps {
   isOpen: boolean;
   onClose: () => void;
   kuh: Kuh | null;
-  onConfirm: (grund: string) => void;
+  onConfirm: () => void;
 }
 
 export default function AbgangDialog({ 
@@ -26,32 +27,34 @@ export default function AbgangDialog({
         className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8" 
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-2xl font-bold text-gray-800 mb-4">Tier abmelden</h3>
-        <p className="text-lg text-gray-600 mb-6">
-          {kuh.name} (Nr. {kuh.tiernummer}) aus dem Bestand nehmen?
-        </p>
-        <div className="space-y-3">
+        <div className="text-center mb-6">
+          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trash2 className="w-10 h-10 text-red-600" />
+          </div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">
+            Bist du dir sicher?
+          </h3>
+          <p className="text-lg text-gray-600">
+            <span className="font-semibold">{kuh.name}</span> (Nr. {kuh.tiernummer}) wird endgültig aus dem System entfernt.
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Diese Aktion kann nicht rückgängig gemacht werden.
+          </p>
+        </div>
+        
+        <div className="flex gap-4">
           <button
-            onClick={() => onConfirm('verkauft')}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 px-6 rounded-xl font-semibold text-lg transition-all active:scale-95 touch-manipulation"
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-lg transition-all active:scale-95 touch-manipulation"
           >
-            📦 Verkauft
-          </button>
-          <button
-            onClick={() => onConfirm('geschlachtet')}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 px-6 rounded-xl font-semibold text-lg transition-all active:scale-95 touch-manipulation"
-          >
-            🥩 Geschlachtet
-          </button>
-          <button
-            onClick={() => onConfirm('verendet')}
-            className="w-full bg-red-500 hover:bg-red-600 text-white py-4 px-6 rounded-xl font-semibold text-lg transition-all active:scale-95 touch-manipulation"
-          >
-            💀 Verendet
+            Ja, entfernen
           </button>
           <button
             onClick={onClose}
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-4 px-6 rounded-xl font-semibold text-lg transition-all active:scale-95 touch-manipulation"
+            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-4 px-6 rounded-xl font-semibold text-lg transition-all active:scale-95 touch-manipulation"
           >
             Abbrechen
           </button>

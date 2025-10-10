@@ -5,11 +5,7 @@ const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const nurAktive = searchParams.get('aktiv') === 'true';
-    
     const kuehe = await prisma.kuh.findMany({
-      where: nurAktive ? { aktiv: true } : undefined,
       orderBy: { name: 'asc' }
     });
     

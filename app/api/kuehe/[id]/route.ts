@@ -38,6 +38,18 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
+    if (body.besamung_datum && !body.letzte_brunst) {
+      body.letzte_brunst = body.besamung_datum;
+    }
+    
+    // Wenn Abgekalbt_am gesetzt wird -> andere Felder zurücksetzen
+    if (body.abgekalbt_am) {
+      body.letzte_brunst = null;
+      body.besamung_datum = null;
+      body.besamung_versuche = 0;
+      body.trockengestellt_am = null;
+      body.kontroll_status = null;
+    }
     
     const kuh = await prisma.kuh.update({
       where: { id: parseInt(id) },
