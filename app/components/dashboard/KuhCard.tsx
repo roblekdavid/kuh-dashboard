@@ -4,18 +4,15 @@ import { useState } from 'react';
 import { Calendar, AlertCircle, CheckCircle, Milk, Trash2 } from 'lucide-react';
 import { Kuh } from '@/app/lib/types';
 import { 
-  parseDate, 
+   parseDate, 
   formatDate, 
-  getDaysUntil, 
+  getDaysUntil,
+  getDaysSince,
   getTrockenstellDatum, 
   getKalbeDatum,
-  addDays,
-  getNaechsteBrunst,
   getKontrollDatum,
-  BRUNST_ZYKLUS_TAGE,
-  KONTROLLE_NACH_TAGEN,
-  TROCKENSTELLEN_NACH_TAGEN,
-  KALBEN_NACH_TAGEN
+  getNextBrunstForKuh,
+  getAlterInMonaten
 } from '@/app/lib/dateUtils';
 import ConfirmDialog from '@/app/components/dialogs/ConfirmDialog';
 import AbgangDialog from '@/app/components/dialogs/AbgangDialog';
@@ -44,6 +41,7 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
     isDanger?: boolean;
   } | null>(null);
 
+  const nextBrunst = getNextBrunstForKuh(kuh);
   const trockenstellDatum = kuh.besamung_datum 
     ? getTrockenstellDatum(parseDate(kuh.besamung_datum)!) 
     : null;
@@ -93,7 +91,7 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
             });
           },
           'Klauenpflege erledigt',
-          `${kuh.name} wurde die Klauenpflege durchgeführt?`
+          `Bei ${kuh.name} wurde die Klauenpflege durchgeführt?`
         )
       });
       return aktionen;
@@ -169,9 +167,6 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
         color: 'from-red-500 to-red-600',
         onClick: () => handleAction(
           async () => {
-            const letzteBrunst = kuh.besamung_datum ? parseDate(kuh.besamung_datum)! : new Date();
-            const naechsteBrunst = getNaechsteBrunst(letzteBrunst);
-            
             await fetch(`/api/kuehe/${kuh.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
@@ -205,7 +200,7 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
     }
 
     // ==================== TROCKENSTELLEN ====================
-    if (trockenstellDatum && kuh.kontroll_status === 'positiv') {
+    if (trockenstellDatum && kuh.kontroll_status === 'positiv' && showInfo.includes('trockenstell_datum')) {
         aktionen.push({
           label: '💤 Trockengestellt',
           color: 'from-indigo-500 to-indigo-600',
@@ -227,7 +222,7 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
     }
 
     // ==================== ABKALBEN ====================
-    if (kalbeDatum && (kuh.trockengestellt_am || !kuh.abgekalbt_am)) {
+    if (kalbeDatum && showInfo.includes('kalbe_datum')) {
         aktionen.push({
           label: '🐮 Abgekalbt',
           color: 'from-green-500 to-green-600',
@@ -261,13 +256,7 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
 
   return (
     <>
-      <div className={`bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-2 ${
-        isUeberfaellig 
-          ? 'border-red-300 ring-2 ring-red-200' 
-          : !kuh.abgekalbt_am 
-          ? 'border-pink-300' 
-          : 'border-transparent'
-      }`}>
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-2">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -290,47 +279,74 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
 
         {/* Info-Anzeigen */}
         <div className="space-y-2 mb-4">
-          {showInfo.includes('brunst') && kuh.letzte_brunst && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="w-4 h-4" />
-              <span>Letzte Brunst: {formatDate(parseDate(kuh.letzte_brunst))}</span>
-            </div>
-          )}
-          
-          {showInfo.includes('brunst') && kuh.letzte_brunst && (
-            <div className="flex items-center gap-2 text-sm text-blue-600 font-semibold">
-              <AlertCircle className="w-4 h-4" />
-              <span>Nächster Zyklus: {formatDate(getNaechsteBrunst(parseDate(kuh.letzte_brunst)!))}</span>
+          {/* Besamungsversuche */}
+          {showInfo?.includes('besamung_versuche') && (
+            <div className="text-sm text-gray-600">
+              <span className="font-semibold">Besamungsversuche: {kuh.besamung_versuche || 0}</span>
             </div>
           )}
 
-          {showInfo.includes('kontrolle') && kontrollDatum && (
-            <div className={`flex items-center gap-2 text-sm font-semibold ${
-              isUeberfaellig ? 'text-red-600' : 'text-orange-600'
-            }`}>
-              <CheckCircle className="w-4 h-4" />
-              <span>
+          {/* Alter für Kalbinnen */}
+          {!kuh.abgekalbt_am && kuh.geburtsdatum && showInfo?.includes('brunst') && (
+            <div className="text-sm text-gray-600">
+              <span>Alter: {getAlterInMonaten(parseDate(kuh.geburtsdatum)!)} Monate</span>
+            </div>
+          )}
+
+          {/* Tage seit Abkalben */}
+          {kuh.abgekalbt_am && showInfo?.includes('brunst') && (
+            <div className="text-sm text-gray-600">
+              <span>Abgekalbt vor: {getDaysSince(parseDate(kuh.abgekalbt_am)!)} Tagen</span>
+            </div>
+          )}
+
+          {/* Brunst-Datum für "Brunst nächste 5 Tage" */}
+          {showInfo?.includes('brunst_datum') && nextBrunst && (
+            <div className="bg-cyan-50 p-3 rounded-xl">
+              <div className="text-cyan-700 font-semibold text-center">
+                Brunst erwartet: {formatDate(nextBrunst)}
+              </div>
+              <div className="text-cyan-600 text-sm text-center mt-1">
+                (in {getDaysUntil(nextBrunst)} Tagen)
+              </div>
+            </div>
+          )}
+
+          {/* Kontrolle */}
+          {showInfo?.includes('kontrolle') && kontrollDatum && (
+            <div className="p-3 rounded-xl">
+              {/*<div className="font-semibold text-center">
+                Besamt: {kuh.besamung_datum}
+              </div>*/}
+              <div className="font-semibold text-center">
                 Kontrolle: {formatDate(kontrollDatum)}
-                {isUeberfaellig && ' (ÜBERFÄLLIG!)'}
-              </span>
+              </div>
             </div>
           )}
 
-          {showInfo.includes('trockenstellen') && trockenstellDatum && (
-            <div className="flex items-center gap-2 text-sm text-purple-600 font-semibold">
-              <Milk className="w-4 h-4" />
-              <span>Trockenstellen: {formatDate(trockenstellDatum)} (in {getDaysUntil(trockenstellDatum)} Tagen)</span>
+          {/* Trockenstellen */}
+          {showInfo?.includes('trockenstell_datum') && trockenstellDatum && (
+            <div className="bg-purple-50 p-3 rounded-xl">
+              <div className="text-purple-700 font-semibold text-center">
+                Trockenstellen: {formatDate(trockenstellDatum)}
+              </div>
+              <div className="text-purple-600 text-sm text-center mt-1">
+                (in {getDaysUntil(trockenstellDatum)} Tagen)
+              </div>
             </div>
           )}
 
-          {showInfo.includes('kalben') && kalbeDatum && (
-            <div className="flex items-center gap-2 text-sm text-green-600 font-semibold">
-              <Calendar className="w-4 h-4" />
-              <span>Kalben: {formatDate(kalbeDatum)} (in {getDaysUntil(kalbeDatum)} Tagen)</span>
+          {/* Kalben */}
+          {showInfo?.includes('kalbe_datum') && kalbeDatum && (
+            <div className="bg-green-50 p-3 rounded-xl">
+              <div className="text-green-700 font-semibold text-center">
+                Abkalben: {formatDate(kalbeDatum)}
+              </div>
+              <div className="text-green-600 text-sm text-center mt-1">
+                (in {getDaysUntil(kalbeDatum)} Tagen)
+              </div>
             </div>
           )}
-
-
         </div>
 
         {/* Aktionen */}
@@ -357,25 +373,6 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
         title={confirmAction?.title || ''}
         message={confirmAction?.message || ''}
         isDanger={confirmAction?.isDanger}
-      />
-
-      <AbgangDialog
-        isOpen={showAbgang}
-        onClose={() => setShowAbgang(false)}
-        kuh={kuh}
-        onConfirm={async (grund) => {
-          await fetch(`/api/kuehe/${kuh.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              aktiv: false,
-              abgangsdatum: new Date().toISOString(),
-              abgangsgrund: grund
-            })
-          });
-          onUpdate();
-          setShowAbgang(false);
-        }}
       />
 
       <DatePickerDialog

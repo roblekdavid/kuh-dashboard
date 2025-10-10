@@ -5,13 +5,12 @@ import Link from 'next/link';
 import { List, Maximize } from 'lucide-react';
 import { Kuh, Dashboard } from '@/app/lib/types';
 import { 
-  parseDate, 
-  isWithinRange, 
+  parseDate,
   getTrockenstellDatum, 
   getKalbeDatum,
+  getNextBrunstForKuh,
+  getDaysSince,
   getNaechsteBrunst,
-  getBrunstAnzeigeDatum,
-  ZWEITE_BESAMUNG_ANZEIGE,
   KONTROLLE_NACH_TAGEN,
   getAlterInMonaten
 } from '@/app/lib/dateUtils';
@@ -31,7 +30,7 @@ export default function KuhDashboard() {
 
   const loadKuehe = async () => {
     try {
-      const res = await fetch('/api/kuehe?aktiv=true');
+      const res = await fetch('/api/kuehe');
       const data = await res.json();
       setKuehe(data);
     } catch (error) {
@@ -88,7 +87,7 @@ export default function KuhDashboard() {
     // 1. BRUNST BEOBACHTEN (Stieren)
     {
       title: 'Brunst beobachten',
-      icon: '🐄',
+      icon: '👁️',
       color: 'from-blue-500 to-blue-600',
       filter: (k: Kuh) => {
         //Keine trächtigen Kühe
@@ -96,55 +95,37 @@ export default function KuhDashboard() {
         // Kalbinnen älter als 14 Monate ohne bekannte Brunst
         if (!k.abgekalbt_am && k.geburtsdatum && !k.letzte_brunst) {
           const alterMonate = getAlterInMonaten(parseDate(k.geburtsdatum)!);
-          if (alterMonate >= 14) {
-            return true;
-          }
+          return alterMonate >= 14;
         }  
-        // Kühe ohne bekannte letzte Brunst
+        // Kühe ohne letzte_brunst und abgekalbt > 19 Tage
         if (k.abgekalbt_am && !k.letzte_brunst) {
-          return true;
+          const daysSince = getDaysSince(parseDate(k.abgekalbt_am)!);
+          return daysSince > 19;
         }
         
         return false;
       },
-      showInfo: ['brunst']
+      showInfo: ['brunst', 'besamung_versuche']
     },
     
-    // 2. BRUNST NÄCHSTEN 2 TAGE
+    // 2. BRUNST NÄCHSTEN 5 TAGE
     {
-      title: 'Brunst nächsten 2 Tage',
+      title: 'Brunst nächste 5 Tage',
       icon: '📅',
       color: 'from-cyan-500 to-cyan-600',
       filter: (k: Kuh) => {
-        // Keine trächtigen Kühe
         if (k.kontroll_status === 'positiv') return false;
         
-        // Hat letzte Brunst
-        if (k.letzte_brunst) {
-          const letzteBrunst = parseDate(k.letzte_brunst)!;
-          const naechsteBrunst = getNaechsteBrunst(letzteBrunst);
-          const heute = new Date();
-          heute.setHours(0, 0, 0, 0);
-          
-          // Zeige 2 Tage vor bis 2 Tage nach erwartetem Zyklus
-          const diffTage = Math.floor((naechsteBrunst.getTime() - heute.getTime()) / (1000 * 60 * 60 * 24));
-          return diffTage >= -2 && diffTage <= 2;
-        }
+        const nextBrunst = getNextBrunstForKuh(k);
+        if (!nextBrunst) return false;
         
-        // Hat Abkalbe-Datum, berechne Zyklus von dort
-        if (k.abgekalbt_am && !k.letzte_brunst) {
-          const abgekalbDatum = parseDate(k.abgekalbt_am)!;
-          const naechsteBrunst = getNaechsteBrunst(abgekalbDatum);
-          const heute = new Date();
-          heute.setHours(0, 0, 0, 0);
-          
-          const diffTage = Math.floor((naechsteBrunst.getTime() - heute.getTime()) / (1000 * 60 * 60 * 24));
-          return diffTage >= -2 && diffTage <= 2;
-        }
+        const heute = new Date();
+        heute.setHours(0, 0, 0, 0);
         
-        return false;
+        const diffDays = Math.floor((nextBrunst.getTime() - heute.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays >= -2 && diffDays <= 5;
       },
-      showInfo: ['brunst']
+      showInfo: ['brunst', 'brunst_datum', 'besamung_versuche']
     },
     
     // 3. KONTROLLE
@@ -153,19 +134,10 @@ export default function KuhDashboard() {
       icon: '🔍',
       color: 'from-orange-500 to-orange-600',
       filter: (k: Kuh) => {
-        // Alle Kühe die 45+ Tage nach Besamung kontrolliert werden müssen
-        if (k.besamung_datum) {
-          const besamungDatum = parseDate(k.besamung_datum)!;
-          const tage = Math.abs(Math.floor((new Date().getTime() - besamungDatum.getTime()) / (1000 * 60 * 60 * 24)));
-          return tage >= KONTROLLE_NACH_TAGEN;
-        }
+        if (!k.besamung_datum || k.kontroll_status) return false;
         
-        // Kühe mit Status "Trächtigkeit unsicher" bleiben zur Kontrolle
-        if (k.kontroll_status === 'unsicher') {
-          return true;
-        }
-        
-        return false;
+        const daysSince = getDaysSince(parseDate(k.besamung_datum)!);
+        return daysSince >= KONTROLLE_NACH_TAGEN;
       },
       showInfo: ['kontrolle']
     },
@@ -173,16 +145,15 @@ export default function KuhDashboard() {
     // 4. TROCKENSTELLEN
     {
       title: 'Trockenstellen',
-      icon: '🍼',
+      icon: '🥛',
       color: 'from-purple-500 to-purple-600',
       filter: (k: Kuh) => {
-        // Alle Kühe die ein Trockenstell-Datum haben und noch nicht trockengestellt sind
-        if (k.kontroll_status === 'positiv' && k.abgekalbt_am) {
-          return true;
-        }
-        return false;
+        return k.abgekalbt_am !== null && 
+               k.kontroll_status === 'positiv' && 
+               !k.trockengestellt_am &&
+               k.besamung_datum !== null;
       },
-      showInfo: ['trockenstellen']
+      showInfo: ['trockenstell_datum']
     },
     
     // 5. ABKALBEN
@@ -191,17 +162,10 @@ export default function KuhDashboard() {
       icon: '🐮',
       color: 'from-green-500 to-green-600',
       filter: (k: Kuh) => {
-        // Kalbinnen mit erstem Kalben-Datum (noch nicht abgekalbt)
-        /*if (k.ist_kalbin && k.erstes_kalben) {
-          return true;
-        }*/
-        // Kühe mit Besamungsdatum (noch nicht abgekalbt)
-        if (k.kontroll_status === 'positiv') {
-          return true;
-        }
-        return false;
+        return k.besamung_datum !== null && 
+               k.kontroll_status === 'positiv';
       },
-      showInfo: ['kalben']
+      showInfo: ['kalbe_datum']
     },
     
     // 6. KLAUENPFLEGE BENÖTIGT
@@ -209,7 +173,7 @@ export default function KuhDashboard() {
       title: 'Klauenpflege benötigt',
       icon: '🦶',
       color: 'from-red-500 to-red-600',
-      filter: (k: Kuh) => k.klauenpflege,
+      filter: (k: Kuh) => k.klauenpflege === true,
       showInfo: []
     },
     
@@ -223,24 +187,66 @@ export default function KuhDashboard() {
   ];
 
   const currentDashboard = dashboards[currentSlide];
-  const filteredKuehe = currentDashboard.filter 
+  let filteredKuehe = currentDashboard.filter 
     ? kuehe.filter(currentDashboard.filter)
     : kuehe;
 
   // Sortierung für Trockenstellen und Abkalben Dashboards
-  if (currentDashboard.title === 'Trockenstellen' && filteredKuehe.length > 0) {
-    filteredKuehe.sort((a, b) => {
-      const datumA = a.besamung_datum ? getTrockenstellDatum(parseDate(a.besamung_datum)!) : new Date(9999, 0, 1);
-      const datumB = b.besamung_datum ? getTrockenstellDatum(parseDate(b.besamung_datum)!) : new Date(9999, 0, 1);
-      return datumA.getTime() - datumB.getTime(); // Aufsteigend (nächstes zuerst)
+  if (currentDashboard.title === 'Brunst nächste 5 Tage') {
+    filteredKuehe = filteredKuehe.sort((a, b) => {
+      const aBrunst = getNextBrunstForKuh(a);
+      const bBrunst = getNextBrunstForKuh(b);
+      
+      if (!aBrunst && !bBrunst) return 0;
+      if (!aBrunst) return 1;
+      if (!bBrunst) return -1;
+      
+      return aBrunst.getTime() - bBrunst.getTime();
     });
-  }
-
-  if (currentDashboard.title === 'Abkalben' && filteredKuehe.length > 0) {
-    filteredKuehe.sort((a, b) => {
-      const datumA = a.besamung_datum ? getKalbeDatum(parseDate(a.besamung_datum))! : new Date(9999, 0, 1);
-      const datumB = b.besamung_datum ? getKalbeDatum(parseDate(b.besamung_datum))! : new Date(9999, 0, 1);
-      return datumA.getTime() - datumB.getTime(); // Aufsteigend (nächstes zuerst)
+  } else if (currentDashboard.title === 'Kontrolle') {
+    filteredKuehe = filteredKuehe.sort((a, b) => {
+      if (!a.besamung_datum && !b.besamung_datum) return 0;
+      if (!a.besamung_datum) return 1;
+      if (!b.besamung_datum) return -1;
+      
+      return parseDate(a.besamung_datum)!.getTime() - parseDate(b.besamung_datum)!.getTime();
+    });
+  } else if (currentDashboard.title === 'Trockenstellen') {
+    filteredKuehe = filteredKuehe.sort((a, b) => {
+      const aTrocken = a.besamung_datum ? getTrockenstellDatum(parseDate(a.besamung_datum)!) : null;
+      const bTrocken = b.besamung_datum ? getTrockenstellDatum(parseDate(b.besamung_datum)!) : null;
+      
+      if (!aTrocken && !bTrocken) return 0;
+      if (!aTrocken) return 1;
+      if (!bTrocken) return -1;
+      
+      return aTrocken.getTime() - bTrocken.getTime();
+    });
+  } else if (currentDashboard.title === 'Abkalben') {
+    filteredKuehe = filteredKuehe.sort((a, b) => {
+      const aKalben = a.besamung_datum ? getKalbeDatum(parseDate(a.besamung_datum)!) : null;
+      const bKalben = b.besamung_datum ? getKalbeDatum(parseDate(b.besamung_datum)!) : null;
+      
+      if (!aKalben && !bKalben) return 0;
+      if (!aKalben) return 1;
+      if (!bKalben) return -1;
+      
+      return aKalben.getTime() - bKalben.getTime();
+    });
+  } else if (currentDashboard.title === 'Brunst beobachten') {
+    filteredKuehe = filteredKuehe.sort((a, b) => {
+      // Kalbinnen nach Alter
+      if (!a.abgekalbt_am && !b.abgekalbt_am) {
+        if (!a.geburtsdatum || !b.geburtsdatum) return 0;
+        return parseDate(a.geburtsdatum)!.getTime() - parseDate(b.geburtsdatum)!.getTime();
+      }
+      
+      // Kühe nach Tagen seit Abkalben
+      if (a.abgekalbt_am && b.abgekalbt_am) {
+        return parseDate(a.abgekalbt_am)!.getTime() - parseDate(b.abgekalbt_am)!.getTime();
+      }
+      
+      return a.abgekalbt_am ? -1 : 1;
     });
   }
 

@@ -46,6 +46,12 @@ export const getDaysUntil = (date: Date): number => {
   return Math.ceil((targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 };
 
+export const getDaysSince = (date: Date): number => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+};
+
 export const getAlterInMonaten = (geburtsdatum: Date): number => {
   const heute = new Date();
   const monate = (heute.getFullYear() - geburtsdatum.getFullYear()) * 12 + 
@@ -74,6 +80,28 @@ export const getTrockenstellDatum = (besamungDatum: Date): Date => {
 export const getKalbeDatum = (besamungDatum: Date | null): Date | null => {
   if (!besamungDatum) return null;
   return addDays(besamungDatum, KALBEN_NACH_TAGEN);
+};
+export const getNextBrunstForKuh = (kuh: Kuh): Date | null => {
+  const heute = new Date();
+  heute.setHours(0, 0, 0, 0);
+  
+  let basisDatum: Date | null = null;
+  
+  if (kuh.letzte_brunst) {
+    basisDatum = parseDate(kuh.letzte_brunst);
+  } else if (kuh.abgekalbt_am) {
+    basisDatum = parseDate(kuh.abgekalbt_am);
+  }
+  
+  if (!basisDatum) return null;
+  
+  // Berechne nächste Brunst (in Zyklen von 21 Tagen)
+  let nextBrunst = new Date(basisDatum);
+  while (nextBrunst <= heute) {
+    nextBrunst = getNaechsteBrunst(nextBrunst);
+  }
+  
+  return nextBrunst;
 };
 
 // ==================== BELEGUNGSPLAN-BERECHNUNG ====================
@@ -153,8 +181,6 @@ function berechneMelkendeKuehe(datum: Date, kuehe: Kuh[]): number {
   let melkend = 0;
 
   kuehe.forEach(kuh => {
-    if (!kuh.aktiv) return;
-
     // Kalbin: Zählt nach erstem Kalben
     if (!kuh.abgekalbt_am) {
       if(kuh.besamung_datum){
