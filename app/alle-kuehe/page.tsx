@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, Filter, ArrowLeft, Settings, Save, Trash2 } from 'lucide-react';
+import { Search, Plus, Filter, ArrowLeft, Settings, Save, Trash2, Milk } from 'lucide-react';
 import Link from 'next/link';
 import { Kuh, Grenzwerte } from '@/app/lib/types';
 import { formatDate, parseDate, getDaysSince, getAlterInMonaten } from '@/app/lib/dateUtils';
@@ -191,6 +191,12 @@ export default function AlleKuehePage() {
               >
                 <Settings className="w-6 h-6" />
               </button>
+              <Link href="/milchmessung">
+                <button className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg transition-all text-white">
+                  <Milk className="w-5 h-5" />
+                  <span className="hidden md:inline">Milchmessung</span>
+                </button>
+              </Link>
               <button
                 onClick={() => setShowNeueKuh(true)}
                 className="bg-gradient-to-r from-green-500 to-green-600 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg transition-all"

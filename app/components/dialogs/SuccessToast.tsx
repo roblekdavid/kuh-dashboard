@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { CheckCircle, X } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 interface SuccessToastProps {
   message: string;
@@ -9,14 +9,13 @@ interface SuccessToastProps {
   onClose: () => void;
 }
 
-export default function SuccessToast({ 
-  message, 
-  isVisible, 
-  onClose 
-}: SuccessToastProps) {
+export default function SuccessToast({ message, isVisible, onClose }: SuccessToastProps) {
   useEffect(() => {
     if (isVisible) {
-      const timer = setTimeout(onClose, 3000);
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1000); // 1 Sekunden
+
       return () => clearTimeout(timer);
     }
   }, [isVisible, onClose]);
@@ -24,15 +23,11 @@ export default function SuccessToast({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed top-8 right-8 bg-green-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-50">
-      <CheckCircle className="w-6 h-6" />
-      <span className="text-lg font-semibold">{message}</span>
-      <button 
-        onClick={onClose} 
-        className="ml-4 hover:bg-green-600 rounded-full p-1 transition-colors"
-      >
-        <X className="w-5 h-5" />
-      </button>
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+      <div className="bg-green-500 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 min-w-[280px] justify-center">
+        <CheckCircle className="w-6 h-6 flex-shrink-0" />
+        <span className="font-semibold text-lg text-center">{message}</span>
+      </div>
     </div>
   );
 }
