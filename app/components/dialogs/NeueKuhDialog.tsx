@@ -38,11 +38,7 @@ export default function NeueKuhDialog({ isOpen, onClose, onSuccess }: NeueKuhDia
       const data: any = {
         name: name.trim(),
         tiernummer: tiernummer.trim(),
-        ist_kalbin: istKalbin,
-        status: istKalbin ? 'kalbin' : 'brunst_beobachten',
         besamung_versuche: 0,
-        trockengestellt: false,
-        abgekalbt: false,
         klauenpflege: false,
         aktiv: true
       };

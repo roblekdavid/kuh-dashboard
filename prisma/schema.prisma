@@ -7,32 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model Kuh {
   id                    Int       @id @default(autoincrement())
   name                  String
   tiernummer            String    @unique
+  geburtsdatum          DateTime?
   
-  // Kalbin oder Kuh
-  ist_kalbin            Boolean   @default(false)
-  erstes_kalben         DateTime?
+  // Brunst & Besamung
+  letzte_brunst         DateTime?
+  besamung_datum        DateTime?
+  besamung_versuche     Int       @default(0)
   
-  status                String    @default("brunst_beobachten")
-  
-  // Brunst & Besamung - ERWEITERT
-  letzte_brunst         DateTime? // Referenz für 21-Tage-Zyklus
-  besamung_datum        DateTime? // Letzte erfolgte Besamung
-  besamung_versuche     Int       @default(0) // Anzahl Besamungen
-  
-  belegt                DateTime? // Erfolgreiche Besamung (trächtig)
-  kontrolle             DateTime? // Kontrolltermin (45 Tage nach Besamung)
-  kontroll_status       String?   // "positiv", "negativ", "unsicher", null
+  kontroll_status       String?
   
   trockengestellt_am    DateTime?
   abgekalbt_am          DateTime?
-  
-  trockengestellt       Boolean   @default(false)
-  abgekalbt             Boolean   @default(false)
+
   klauenpflege          Boolean   @default(false)
   
   // Bestandsverwaltung
@@ -46,19 +36,4 @@ model Kuh {
   updatedAt             DateTime  @updatedAt
   
   @@map("kuehe")
-}
-
-// ============================================
-// OPTIONAL: MELKSTAND-KOMMUNIKATION
-// ============================================
-model MelkstandPosition {
-  id            Int       @id @default(autoincrement())
-  position      Int
-  kuhId         Int?
-  kuhName       String?
-  kuhNummer     String?
-  zeitstempel   DateTime  @default(now())
-  sessionId     String
-  
-  @@map("melkstand_positionen")
 }

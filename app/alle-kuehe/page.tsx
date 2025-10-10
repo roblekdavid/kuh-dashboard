@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, Filter, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Filter, ArrowLeft, Settings, Save } from 'lucide-react';
 import Link from 'next/link';
-import { Kuh } from '@/app/lib/types';
-import { formatDate, parseDate, getDaysUntil } from '@/app/lib/dateUtils';
+import { Kuh, Grenzwerte } from '@/app/lib/types';
+import { formatDate, parseDate, getDaysUntil, getAlterInMonaten } from '@/app/lib/dateUtils';
 import NeueKuhDialog from '@/app/components/dialogs/NeueKuhDialog';
 import AbgangDialog from '@/app/components/dialogs/AbgangDialog';
 import DatePickerDialog from '@/app/components/dialogs/DatePickerDialog';
+import ConfirmDialog from '@/app/components/dialogs/ConfirmDialog';
 import SuccessToast from '@/app/components/dialogs/SuccessToast';
 
 export default function AlleKuehePage() {
@@ -22,13 +23,17 @@ export default function AlleKuehePage() {
   const [datePickerConfig, setDatePickerConfig] = useState<any>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showGrenzwerte, setShowGrenzwerte] = useState(false);
+  const [grenzwerte, setGrenzwerte] = useState<Grenzwerte>({ ideal: 60, min: 50, max: 70 });
+  const [showFehlgeburt, setShowFehlgeburt] = useState(false);
 
   useEffect(() => {
     loadKuehe();
+    loadGrenzwerte();
   }, []);
 
   useEffect(() => {
-    filterKuehe();
+    filterAndSortKuehe();
   }, [kuehe, searchTerm, statusFilter]);
 
   const loadKuehe = async () => {
@@ -41,7 +46,21 @@ export default function AlleKuehePage() {
     }
   };
 
-  const filterKuehe = () => {
+  const loadGrenzwerte = () => {
+    const saved = localStorage.getItem('grenzwerte');
+    if (saved) {
+      setGrenzwerte(JSON.parse(saved));
+    }
+  };
+
+  const saveGrenzwerte = () => {
+    localStorage.setItem('grenzwerte', JSON.stringify(grenzwerte));
+    setShowGrenzwerte(false);
+    setSuccessMessage('✅ Grenzwerte gespeichert!');
+    setShowSuccess(true);
+  };
+
+  const filterAndSortKuehe = () => {
     let filtered = kuehe;
 
     // Suche
@@ -55,11 +74,32 @@ export default function AlleKuehePage() {
     // Status-Filter
     if (statusFilter !== 'alle') {
       filtered = filtered.filter(k => {
-        if (statusFilter === 'kalbin') return k.ist_kalbin;
+        if (statusFilter === 'kalbin') return !k.abgekalbt_am;
         if (statusFilter === 'klauenpflege') return k.klauenpflege;
-        return k.status === statusFilter;
+        //return k.status === statusFilter;
       });
     }
+
+    // SORTIERUNG: Tiere bei denen am längsten keine Brunst beobachtet wurde zuerst
+    filtered.sort((a, b) => {
+      // Kalbinnen: Älteste zuerst
+      if (!a.abgekalbt_am && !b.abgekalbt_am) {
+        if (a.geburtsdatum && b.geburtsdatum) {
+          return parseDate(a.geburtsdatum)!.getTime() - parseDate(b.geburtsdatum)!.getTime();
+        }
+        return 0;
+      }
+      
+      // Kühe: Diejenigen bei denen Abkalben am längsten zurück liegt zuerst
+      if (a.abgekalbt_am && b.abgekalbt_am) {
+        const aAbkalben = a.abgekalbt_am ? parseDate(a.abgekalbt_am)!.getTime() : 0;
+        const bAbkalben = b.abgekalbt_am ? parseDate(b.abgekalbt_am)!.getTime() : 0;
+        return aAbkalben - bAbkalben;
+      }
+      
+      // Kühe vor Kalbinnen
+      return !a.abgekalbt_am ? 1 : -1;
+    });
 
     setFilteredKuehe(filtered);
   };
@@ -79,6 +119,30 @@ export default function AlleKuehePage() {
     }
   };
 
+  const handleFehlgeburt = async () => {
+    if (!selectedKuh) return;
+    
+    // Fehlgeburt verhält sich wie Abkalben: Setzt Datum und löscht andere Status
+    await handleStatusChange(selectedKuh.id, {
+      abgekalbt: true,
+      abgekalbt_am: new Date().toISOString(),
+      status: 'abgekalbt',
+      besamung_datum: null,
+      letzte_brunst: null,
+      belegt: null,
+      kontrolle: null,
+      kontroll_status: null,
+      trockengestellt: false,
+      trockengestellt_am: null,
+      besamung_versuche: 0
+    });
+    
+    setShowFehlgeburt(false);
+    setSelectedKuh(null);
+    setSuccessMessage('✅ Fehlgeburt dokumentiert');
+    setShowSuccess(true);
+  };
+
   const handleDateAction = (kuh: Kuh, config: any) => {
     setSelectedKuh(kuh);
     setDatePickerConfig(config);
@@ -90,7 +154,6 @@ export default function AlleKuehePage() {
     { value: 'kalbin', label: 'Kalbinnen', color: 'bg-pink-500' },
     { value: 'brunst_beobachten', label: 'Brunst beobachten', color: 'bg-blue-500' },
     { value: 'besamt', label: 'Besamt', color: 'bg-green-500' },
-    { value: 'traechtig', label: 'Trächtig', color: 'bg-purple-500' },
     { value: 'trocken', label: 'Trockengestellt', color: 'bg-indigo-500' },
     { value: 'abgekalbt', label: 'Abgekalbt', color: 'bg-emerald-500' },
     { value: 'klauenpflege', label: 'Klauenpflege', color: 'bg-red-500' },
@@ -116,15 +179,82 @@ export default function AlleKuehePage() {
               </div>
             </div>
             
-            <button
-              onClick={() => setShowNeueKuh(true)}
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-2xl font-semibold text-lg flex items-center gap-2 transition-all active:scale-95 touch-manipulation"
-            >
-              <Plus className="w-6 h-6" />
-              Neue Kuh
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowGrenzwerte(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-2xl font-semibold text-lg flex items-center gap-2 transition-all active:scale-95 touch-manipulation"
+              >
+                <Settings className="w-6 h-6" />
+                <span className="hidden md:inline">Grenzwerte</span>
+              </button>
+              
+              <button
+                onClick={() => setShowNeueKuh(true)}
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-4 rounded-2xl font-semibold text-lg flex items-center gap-2 transition-all active:scale-95 touch-manipulation"
+              >
+                <Plus className="w-6 h-6" />
+                Neue Kuh
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Grenzwerte-Panel */}
+        {showGrenzwerte && (
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-lg">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">📊 Bestandsziele (für Belegungsplan)</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Minimum Anzahl
+                </label>
+                <input
+                  type="number"
+                  value={grenzwerte.min}
+                  onChange={(e) => setGrenzwerte({ ...grenzwerte, min: parseInt(e.target.value) || 0 })}
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Ideal Anzahl
+                </label>
+                <input
+                  type="number"
+                  value={grenzwerte.ideal}
+                  onChange={(e) => setGrenzwerte({ ...grenzwerte, ideal: parseInt(e.target.value) || 0 })}
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Maximum Anzahl
+                </label>
+                <input
+                  type="number"
+                  value={grenzwerte.max}
+                  onChange={(e) => setGrenzwerte({ ...grenzwerte, max: parseInt(e.target.value) || 0 })}
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={saveGrenzwerte}
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-xl font-semibold text-lg transition-all active:scale-95 touch-manipulation flex items-center justify-center gap-2"
+              >
+                <Save className="w-5 h-5" />
+                Speichern
+              </button>
+              <button
+                onClick={() => setShowGrenzwerte(false)}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-6 rounded-xl font-semibold text-lg transition-all active:scale-95 touch-manipulation"
+              >
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Suche & Filter */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-lg">
@@ -159,204 +289,135 @@ export default function AlleKuehePage() {
 
         {/* Kühe-Liste */}
         <div className="space-y-4">
-          {filteredKuehe.map((kuh) => (
-            <div key={kuh.id} className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className={`${
-                    kuh.ist_kalbin 
-                      ? 'bg-gradient-to-br from-pink-500 to-pink-600' 
-                      : 'bg-gradient-to-br from-blue-500 to-blue-600'
-                  } text-white w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg`}>
-                    #{kuh.tiernummer}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-2xl font-bold text-gray-800">{kuh.name}</h3>
-                      {kuh.ist_kalbin && (
-                        <span className="bg-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold">KALBIN</span>
+          {filteredKuehe.map((kuh) => {
+            const tageAbkalben = kuh.abgekalbt_am 
+              ? Math.abs(Math.floor((new Date().getTime() - parseDate(kuh.abgekalbt_am)!.getTime()) / (1000 * 60 * 60 * 24)))
+              : null;
+            
+            const alterMonate = kuh.geburtsdatum 
+              ? getAlterInMonaten(parseDate(kuh.geburtsdatum)!)
+              : null;
+
+            return (
+              <div key={kuh.id} className={`bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border-2 ${
+                !kuh.abgekalbt_am ? 'border-pink-300' : 'border-transparent'
+              }`}>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`text-4xl ${!kuh.abgekalbt_am ? 'bg-pink-100' : 'bg-blue-100'} w-16 h-16 rounded-xl flex items-center justify-center`}>
+                      {!kuh.abgekalbt_am ? '🐄' : '🐮'}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-2xl font-bold text-gray-800">{kuh.name}</h3>
+                        {!kuh.abgekalbt_am && (
+                          <span className="bg-pink-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
+                            Kalbin
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-gray-600 text-lg">Nr. {kuh.tiernummer}</p>
+                      {!kuh.abgekalbt_am && alterMonate !== null && (
+                        <p className="text-gray-500 text-sm mt-1">
+                          Alter: {alterMonate} Monate
+                        </p>
                       )}
-                      {kuh.klauenpflege && (
-                        <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">🦶 Klauenpflege</span>
+                      {kuh.abgekalbt_am && tageAbkalben !== null && (
+                        <p className="text-gray-500 text-sm mt-1">
+                          Abgekalbt vor {tageAbkalben} Tagen
+                        </p>
                       )}
                     </div>
-                    <p className="text-lg text-gray-600">
-                      Status: <span className="font-semibold">{kuh.status}</span>
-                      {kuh.besamung_versuche > 0 && (
-                        <span className="ml-2 text-sm">({kuh.besamung_versuche}x besamt)</span>
-                      )}
-                    </p>
                   </div>
+                  
+                  <button
+                    onClick={() => {
+                      setSelectedKuh(kuh);
+                      setShowAbgang(true);
+                    }}
+                    className="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-xl font-semibold transition-all active:scale-95"
+                  >
+                    Abmelden
+                  </button>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setSelectedKuh(kuh);
-                    setShowAbgang(true);
-                  }}
-                  className="bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded-xl font-semibold transition-all"
-                >
-                  Abmelden
-                </button>
-              </div>
+                {/* Aktionen */}
+                <div className="flex flex-wrap gap-3">
+                  {/* Brunst beobachtet */}
+                  <button
+                    onClick={() => handleDateAction(kuh, {
+                      title: 'Brunst beobachtet',
+                      message: `Wann wurde bei ${kuh.name} die Brunst beobachtet?`,
+                      action: async (date: Date) => {
+                        await handleStatusChange(kuh.id, {
+                          letzte_brunst: date.toISOString(),
+                          status: 'brunst_beobachten'
+                        });
+                      }
+                    })}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold transition-all active:scale-95"
+                  >
+                    Brunst beobachtet
+                  </button>
 
-              {/* Schnell-Aktionen */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button
-                  onClick={() => handleDateAction(kuh, {
-                    title: 'Brunst beobachtet',
-                    message: `Wann wurde die Brunst bei ${kuh.name} beobachtet?`,
-                    action: async (date: Date) => {
-                      await handleStatusChange(kuh.id, {
-                        letzte_brunst: date.toISOString(),
-                        status: 'brunst_beobachten',
-                        abgekalbt: false
-                      });
-                    }
-                  })}
-                  className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-95 touch-manipulation"
-                >
-                  📝 Brunst
-                </button>
+                  {/* Besamt */}
+                  <button
+                    onClick={() => handleDateAction(kuh, {
+                      title: 'Besamt',
+                      message: `Wann wurde ${kuh.name} besamt?`,
+                      action: async (date: Date) => {
+                        await handleStatusChange(kuh.id, {
+                          besamung_datum: date.toISOString(),
+                          letzte_brunst: date.toISOString(),
+                          belegt: date.toISOString(),
+                          besamung_versuche: (kuh.besamung_versuche || 0) + 1,
+                          status: 'besamt'
+                        });
+                      }
+                    })}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-semibold transition-all active:scale-95"
+                  >
+                    Besamt
+                  </button>
 
-                <button
-                  onClick={() => handleDateAction(kuh, {
-                    title: 'Besamung',
-                    message: `Wann wurde ${kuh.name} besamt?`,
-                    action: async (date: Date) => {
-                      const neueVersuche = (kuh.besamung_versuche || 0) + 1;
-                      const kontrollDatum = new Date(date);
-                      kontrollDatum.setDate(kontrollDatum.getDate() + 45);
-                      
-                      await handleStatusChange(kuh.id, {
-                        besamung_datum: date.toISOString(),
-                        letzte_brunst: date.toISOString(),
-                        besamung_versuche: neueVersuche,
-                        kontrolle: kontrollDatum.toISOString(),
-                        status: 'besamt',
-                        kontroll_status: null
-                      });
-                    }
-                  })}
-                  className="bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-95 touch-manipulation"
-                >
-                  ✅ Besamt
-                </button>
+                  {/* Klauenpflege */}
+                  <button
+                    onClick={() => handleStatusChange(kuh.id, {
+                      klauenpflege: !kuh.klauenpflege
+                    })}
+                    className={`${
+                      kuh.klauenpflege 
+                        ? 'bg-gray-500 hover:bg-gray-600' 
+                        : 'bg-orange-500 hover:bg-orange-600'
+                    } text-white px-4 py-2 rounded-xl font-semibold transition-all active:scale-95`}
+                  >
+                    {kuh.klauenpflege ? 'Klauenpflege erledigt' : 'Klauenpflege nötig'}
+                  </button>
 
-                <button
-                  onClick={() => handleStatusChange(kuh.id, {
-                    status: 'traechtig',
-                    kontroll_status: 'positiv',
-                    belegt: kuh.besamung_datum,
-                    kontrolle: null
-                  })}
-                  className="bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-95 touch-manipulation"
-                >
-                  🤰 Trächtig
-                </button>
-
-                <button
-                  onClick={() => handleDateAction(kuh, {
-                    title: 'Abkalbung',
-                    message: `Wann hat ${kuh.name} abgekalbt?`,
-                    action: async (date: Date) => {
-                      await handleStatusChange(kuh.id, {
-                        abgekalbt: true,
-                        abgekalbt_am: date.toISOString(),
-                        trockengestellt: false,
-                        trockengestellt_am: null,
-                        status: 'abgekalbt'
-                      });
-                    }
-                  })}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-95 touch-manipulation"
-                >
-                  🐮 Abgekalbt
-                </button>
-
-                <button
-                  onClick={() => handleStatusChange(kuh.id, {
-                    klauenpflege: !kuh.klauenpflege
-                  })}
-                  className={`${
-                    kuh.klauenpflege 
-                      ? 'bg-green-500 hover:bg-green-600' 
-                      : 'bg-red-500 hover:bg-red-600'
-                  } text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-95 touch-manipulation`}
-                >
-                  {kuh.klauenpflege ? '✅ Klauen OK' : '🦶 Klauen'}
-                </button>
-
-                <button
-                  onClick={() => {
-                    // Verwurf - zurück zu Brunst
-                    const naechsteBrunst = new Date();
-                    naechsteBrunst.setDate(naechsteBrunst.getDate() + 21);
-                    
-                    handleStatusChange(kuh.id, {
-                      status: 'brunst_beobachten',
-                      belegt: null,
-                      kontrolle: null,
-                      kontroll_status: 'negativ',
-                      trockengestellt: false,
-                      letzte_brunst: naechsteBrunst.toISOString()
-                    });
-                  }}
-                  className="bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-95 touch-manipulation"
-                >
-                  ⚠️ Verwurf
-                </button>
-
-                <button
-                  onClick={() => handleStatusChange(kuh.id, {
-                    trockengestellt: !kuh.trockengestellt,
-                    trockengestellt_am: kuh.trockengestellt ? null : new Date().toISOString(),
-                    status: kuh.trockengestellt ? 'traechtig' : 'trocken'
-                  })}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-95 touch-manipulation"
-                >
-                  {kuh.trockengestellt ? '🔄 Wieder melken' : '💤 Trocken'}
-                </button>
-
-                <button
-                  onClick={() => {
-                    const notiz = prompt(`Notiz für ${kuh.name}:`, kuh.notizen || '');
-                    if (notiz !== null) {
-                      handleStatusChange(kuh.id, { notizen: notiz || null });
-                    }
-                  }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-xl font-semibold transition-all active:scale-95 touch-manipulation"
-                >
-                  📝 Notiz
-                </button>
-              </div>
-
-              {/* Notizen anzeigen */}
-              {kuh.notizen && (
-                <div className="mt-4 bg-yellow-50 border-l-4 border-yellow-500 p-3 rounded">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Notiz:</strong> {kuh.notizen}
-                  </p>
+                  {/* Fehlgeburt */}
+                  <button
+                    onClick={() => {
+                      setSelectedKuh(kuh);
+                      setShowFehlgeburt(true);
+                    }}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-semibold transition-all active:scale-95"
+                  >
+                    Fehlgeburt
+                  </button>
                 </div>
-              )}
-            </div>
-          ))}
-
-          {filteredKuehe.length === 0 && (
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-12 text-center shadow-xl">
-              <Search className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Keine Kühe gefunden</h2>
-              <p className="text-lg text-gray-600">Passe deine Such- oder Filterkriterien an</p>
-            </div>
-          )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
+      {/* Dialoge */}
       <NeueKuhDialog
         isOpen={showNeueKuh}
         onClose={() => setShowNeueKuh(false)}
         onSuccess={() => {
           loadKuehe();
+          setShowNeueKuh(false);
           setSuccessMessage('✅ Neue Kuh erfolgreich angelegt!');
           setShowSuccess(true);
         }}
@@ -392,6 +453,17 @@ export default function AlleKuehePage() {
         }}
         title={datePickerConfig?.title || ''}
         message={datePickerConfig?.message || ''}
+      />
+
+      <ConfirmDialog
+        isOpen={showFehlgeburt}
+        onClose={() => setShowFehlgeburt(false)}
+        onConfirm={handleFehlgeburt}
+        title="Fehlgeburt dokumentieren"
+        message={`Fehlgeburt bei ${selectedKuh?.name} dokumentieren? Das Tier wird wie nach dem Abkalben behandelt und die Brunstbeobachtung beginnt von vorne.`}
+        confirmText="Bestätigen"
+        cancelText="Abbrechen"
+        isDanger={false}
       />
 
       <SuccessToast
