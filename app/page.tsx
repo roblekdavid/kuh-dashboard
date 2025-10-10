@@ -325,24 +325,25 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 p-4 md:p-8">
-      <div className="max-w-[1920px] mx-auto">
-        {/* Top Navigation */}
-        <div className="flex justify-between items-center mb-6">
-          <Link href="/alle-kuehe">
-            <button className="bg-white hover:bg-gray-50 p-3 md:p-4 rounded-2xl shadow-xl border-2 border-gray-300 transition-all active:scale-95 touch-manipulation flex items-center gap-2 font-bold">
-              <List className="w-5 h-5 md:w-6 md:h-6 text-gray-700" />
-              <span className="hidden md:inline text-gray-800">Alle Kühe</span>
-            </button>
-          </Link>
-          
-          <button
-            onClick={toggleFullscreen}
-            className="bg-white hover:bg-gray-50 p-3 md:p-4 rounded-2xl shadow-xl border-2 border-gray-300 transition-all active:scale-95 touch-manipulation font-bold text-gray-700"
-            title={isFullscreen ? "Fullscreen beenden (ESC)" : "Fullscreen aktivieren"}
-          >
-            <Maximize className="w-5 h-5 md:w-6 md:h-6" />
+    <div className="max-w-[1920px] mx-auto relative">
+      {/* Top Navigation */}
+      {/* Top Navigation - Schwebende Buttons */}
+      <div className="absolute top-4 right-4 z-10 flex gap-3">
+        <Link href="/alle-kuehe">
+          <button className="bg-white/95 hover:bg-white backdrop-blur-sm p-3 md:p-4 rounded-2xl shadow-xl border-2 border-gray-300 transition-all active:scale-95 touch-manipulation flex items-center gap-2 font-bold">
+            <List className="w-5 h-5 md:w-6 md:h-6 text-gray-700" />
+            <span className="hidden md:inline text-gray-800">Alle Kühe</span>
           </button>
-        </div>
+        </Link>
+
+        <button
+          onClick={toggleFullscreen}
+          className="hidden md:block bg-white/95 hover:bg-white backdrop-blur-sm p-3 md:p-4 rounded-2xl shadow-xl border-2 border-gray-300 transition-all active:scale-95 touch-manipulation font-bold text-gray-700"
+          title={isFullscreen ? "Fullscreen beenden (ESC)" : "Fullscreen aktivieren"}
+        >
+          <Maximize className="w-5 h-5 md:w-6 md:h-6" />
+        </button>
+      </div>
 
         {/* Dashboard Header */}
         <DashboardHeader
@@ -360,7 +361,7 @@ useEffect(() => {
         ) : (
           <>
             {filteredKuehe.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+              <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 ${isFullscreen ? 'mb-4' : 'mb-8'}`}>
                 {filteredKuehe.map((kuh) => (
                   <KuhCard
                     key={kuh.id}

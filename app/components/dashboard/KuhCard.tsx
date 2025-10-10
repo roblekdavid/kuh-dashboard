@@ -314,11 +314,11 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
 
           {/* Kontrolle */}
           {showInfo?.includes('kontrolle') && kontrollDatum && (
-            <div className="p-3 rounded-xl">
-              {/*<div className="font-semibold text-center">
-                Besamt: {kuh.besamung_datum}
-              </div>*/}
-              <div className="font-semibold text-center">
+            <div className="bg-orange-50 p-3 rounded-xl border-2 border-orange-200">
+              <div className="font-bold text-center text-orange-800 text-sm">
+                Besamt: {kuh.besamung_datum ? formatDate(parseDate(kuh.besamung_datum)!) : '-'}
+              </div>
+              <div className="font-bold text-center text-orange-800 text-base mt-1">
                 Kontrolle: {formatDate(kontrollDatum)}
               </div>
             </div>

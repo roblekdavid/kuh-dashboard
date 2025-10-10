@@ -21,17 +21,17 @@ export default function DashboardHeader({
   onToggleAutoPlay
 }: DashboardHeaderProps) {
   return (
-    <div className={`bg-gradient-to-r ${currentDashboard.color} rounded-3xl shadow-2xl p-4 sm:p-6 md:p-8 mb-8 text-white overflow-hidden`}>
+    <div className={`bg-gradient-to-r ${currentDashboard.color} rounded-3xl shadow-2xl p-3 sm:p-4 md:p-5 mb-3 md:mb-4 text-white overflow-hidden`}>
       {/* Mobile Layout: Stack vertically */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 md:gap-3">
         {/* Header mit Icon und Titel */}
-        <div className="flex items-start gap-3 sm:gap-4">
-          <span className="text-4xl sm:text-5xl md:text-6xl flex-shrink-0">{currentDashboard.icon}</span>
+        <div className="flex items-start gap-2 sm:gap-3">
+  <span className="text-3xl sm:text-4xl md:text-5xl flex-shrink-0">{currentDashboard.icon}</span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-1 sm:mb-2 break-words">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-0.5 md:mb-1 break-words">
               {currentDashboard.title}
             </h1>
-            <p className="text-base sm:text-xl md:text-2xl opacity-90">
+            <p className="text-sm sm:text-base md:text-lg opacity-90">
               {currentDashboard.isSpecial 
                 ? 'Melkende Kühe pro Monat' 
                 : `${filteredCount} ${filteredCount === 1 ? 'Kuh' : 'Kühe'}`
@@ -41,7 +41,7 @@ export default function DashboardHeader({
         </div>
         
         {/* Navigation Controls - Zentriert auf Mobile */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
           <button
             onClick={onPrev}
             className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 sm:p-3.5 md:p-4 rounded-xl sm:rounded-2xl transition-all active:scale-95 touch-manipulation flex-shrink-0"

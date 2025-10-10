@@ -46,7 +46,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl overflow-hidden">
+     <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-4 sm:p-6 shadow-xl overflow-hidden">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
           Geplante Belegung für die nächsten 6 Monate
@@ -70,7 +70,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
         </div>
       </div>
 
-      <div className="space-y-4 px-2 sm:px-0">
+      <div className="space-y-4">
         {monate.map((monat, mIndex) => {
           const isExpanded = expandedMonths.has(mIndex);
           const prozent = (monat.melkend / maxMelkend) * 100;
@@ -82,7 +82,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
               {/* Monat */}
               <button
                 onClick={() => toggleMonth(mIndex)}
-                className="w-full p-4 md:p-6 hover:bg-gray-50 transition-colors flex items-center gap-3 md:gap-6"
+                className="w-full p-4 hover:bg-gray-50 transition-colors flex items-center gap-4"
               >
                 <div className="flex-shrink-0">
                   {isExpanded ? (
@@ -92,11 +92,11 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                   )}
                 </div>
                 
-                <div className="w-28 md:w-36 text-left font-bold text-gray-800 text-base md:text-lg">
+                <div className="w-32 lg:w-40 text-left font-bold text-gray-800 text-lg">
                   {monat.monat}
                 </div>
                 
-                <div className="flex-1 bg-gray-200 rounded-full h-8 md:h-10 relative overflow-hidden">
+                <div className="flex-1 max-w-[60%] md:max-w-[70%] bg-gray-200 rounded-full h-8 md:h-10 relative overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       istNiedrig
@@ -115,7 +115,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                   </div>
                 </div>
                 
-                <div className="w-24 md:w-32 text-left">
+                <div className="w-32 lg:w-40 text-left flex-shrink-0">
                   {istNiedrig && (
                     <span className="text-orange-600 text-sm font-semibold">⚠️ Niedrig</span>
                   )}
@@ -130,7 +130,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
 
               {/* Wochen (aufgeklappt) */}
               {isExpanded && (
-                <div className="bg-gray-50 p-3 md:p-5 space-y-2 md:space-y-3 border-t-2 border-gray-200">
+                <div className="bg-gray-50 p-4 space-y-2 border-t-2 border-gray-200">
                   {monat.wochen.map((woche: any, wIndex: number) => {
                     const weekKey = `${mIndex}-${wIndex}`;
                     const isWeekExpanded = expandedWeeks.has(weekKey);
@@ -140,7 +140,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                       <div key={wIndex}>
                         <button
                           onClick={() => toggleWeek(weekKey)}
-                          className="w-full flex items-center gap-2 sm:gap-4 ml-4 sm:ml-9 p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                          className="w-full flex items-center gap-4 ml-8 p-2 hover:bg-gray-100 rounded-xl transition-colors"
                         >
                           <div className="flex-shrink-0">
                             {isWeekExpanded ? (
@@ -154,7 +154,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                             {woche.woche}
                           </div>
                           
-                          <div className="flex-1 bg-gray-300 rounded-full h-6 md:h-7 relative overflow-hidden">
+                          <div className="flex-1 max-w-[65%] md:max-w-[75%] bg-gray-300 rounded-full h-6 md:h-7 relative overflow-hidden">
                             <div
                               className="h-full bg-gradient-to-r from-blue-300 to-blue-400 rounded-full transition-all duration-500"
                               style={{ width: `${wocheProzent}%` }}
@@ -170,7 +170,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
 
                         {/* Tage (aufgeklappt) */}
                         {isWeekExpanded && (
-                          <div className="ml-8 sm:ml-20 mt-2 space-y-1">
+                          <div className="ml-16 mt-2 space-y-1">
                             {woche.tage.map((tag: any, tIndex: number) => {
                               const tagProzent = (tag.melkend / maxMelkend) * 100;
                               
@@ -180,7 +180,7 @@ export default function BelegungsplanChart({ kuehe }: BelegungsplanChartProps) {
                                     {tag.tag}
                                   </div>
                                   
-                                  <div className="flex-1 bg-gray-300 rounded-full h-4 md:h-5 relative overflow-hidden">
+                                  <div className="flex-1 max-w-[70%] md:max-w-[80%] bg-gray-300 rounded-full h-4 md:h-5 relative overflow-hidden">
                                     <div
                                       className="h-full bg-gradient-to-r from-cyan-300 to-cyan-400 rounded-full"
                                       style={{ width: `${tagProzent}%` }}
