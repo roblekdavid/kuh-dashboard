@@ -8,7 +8,8 @@ import SuccessToast from '@/app/components/dialogs/SuccessToast';
 
 export default function MilchmessungPage() {
   const [kuehe, setKuehe] = useState<Kuh[]>([]);
-  const [plaetze, setPlaetze] = useState<Array<{ platz: number; kuh: Kuh | null }>>([]);
+    const [plaetze, setPlaetze] = useState<Array<{ platz: number; kuh: Kuh | null }>>([]);
+    const [bereitsGemolkeneKuehe, setBereitsGemolkeneKuehe] = useState<number[]>([]);
   const [selectedPlatz, setSelectedPlatz] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -37,44 +38,49 @@ export default function MilchmessungPage() {
 };
 
   const loadPlaetze = async () => {
-    const res = await fetch('/api/milchmessung');
-    const data = await res.json();
-    setPlaetze(data.plaetze);
-  };
+  const res = await fetch('/api/milchmessung');
+  const data = await res.json();
+  setPlaetze(data.plaetze);
+  setBereitsGemolkeneKuehe(data.bereitsGemolkeneKuehe || []);
+};
 
   const setKuhAufPlatz = async (platz: number, kuh: Kuh | null) => {
-    await fetch('/api/milchmessung', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'set', platz, kuh })
-    });
-    await loadPlaetze();
+  await fetch('/api/milchmessung', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'set', platz, kuh })
+  });
+  await loadPlaetze();
+  
+  // Visuelles Feedback
+  if (kuh) {
+    // Kuh wurde hinzugefügt
+    setSuccessMessage(`✅ ${kuh.name} → Platz ${platz}`);
+    setShowSuccess(true);
     
-    // Visuelles Feedback
-    if (kuh) {
-      // Success Toast zeigen
-      setSuccessMessage(`✅ ${kuh.name} → Platz ${platz}`);
-      setShowSuccess(true);
-      
-      // Haptic Feedback (Vibration auf mobilen Geräten)
-      if ('vibrate' in navigator) {
-        navigator.vibrate(50);
-      }
-      
-      // Kurze Verzögerung für visuelles Feedback
-      setTimeout(() => {
-        // Springe zum nächsten leeren Platz
-        const nextEmpty = plaetze.findIndex((p, idx) => idx > platz - 1 && !p.kuh);
-        if (nextEmpty !== -1) {
-            setSelectedPlatz(nextEmpty + 1);
-        } else {
-            setSelectedPlatz(null);
-            setSuccessMessage('✅ Alle Plätze belegt!');
-        }
-        }, 300);
+    // Haptic Feedback (Vibration auf mobilen Geräten)
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50);
     }
-    setSearchTerm('');
-  };
+    
+    // Kurze Verzögerung für visuelles Feedback
+    setTimeout(() => {
+      // Springe zum nächsten leeren Platz
+      const nextEmpty = plaetze.findIndex((p, idx) => idx > platz - 1 && !p.kuh);
+      if (nextEmpty !== -1) {
+        setSelectedPlatz(nextEmpty + 1);
+      } else {
+        setSelectedPlatz(null);
+        setSuccessMessage('✅ Alle Plätze belegt!');
+      }
+    }, 300);
+  } else {
+    // Kuh wurde einzeln entfernt - wieder verfügbar
+    setSuccessMessage('🔄 Kuh wieder verfügbar');
+    setShowSuccess(true);
+  }
+  setSearchTerm('');
+};
 
   const alleZuruecksetzen = async () => {
     await fetch('/api/milchmessung', {
@@ -90,18 +96,36 @@ export default function MilchmessungPage() {
     setSuccessMessage('🗑️ Alle Plätze geleert');
     setShowSuccess(true);
   };
-
-  const filteredKuehe = kuehe.filter(k => 
-    (k.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    k.tiernummer.toString().includes(searchTerm))
-  ).sort((a, b) => {
-    // Bereits zugewiesene Kühe ans Ende sortieren
-    const aZugewiesen = plaetze.some(p => p.kuh?.id === a.id);
-    const bZugewiesen = plaetze.some(p => p.kuh?.id === b.id);
-    if (aZugewiesen && !bZugewiesen) return 1;
-    if (!aZugewiesen && bZugewiesen) return -1;
-    return 0;
+  const speicherLeeren = async () => {
+  await fetch('/api/milchmessung', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'clearHistory' })
   });
+  await loadPlaetze();
+  
+  // Success Feedback
+  setSuccessMessage('🔄 Speicher geleert - Alle Kühe wieder verfügbar');
+  setShowSuccess(true);
+};
+
+  const filteredKuehe = kuehe.filter(k => {
+  // Kühe die bereits gemolken wurden herausfiltern
+  if (bereitsGemolkeneKuehe.includes(k.id)) {
+    return false;
+  }
+  
+  // Suche anwenden
+  return k.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    k.tiernummer.toString().includes(searchTerm);
+}).sort((a, b) => {
+  // Bereits zugewiesene Kühe ans Ende sortieren
+  const aZugewiesen = plaetze.some(p => p.kuh?.id === a.id);
+  const bZugewiesen = plaetze.some(p => p.kuh?.id === b.id);
+  if (aZugewiesen && !bZugewiesen) return 1;
+  if (!aZugewiesen && bZugewiesen) return -1;
+  return 0;
+});
 
   const selectKuh = (kuh: Kuh) => {
     if (selectedPlatz) {
@@ -170,13 +194,23 @@ export default function MilchmessungPage() {
           )}
 
           {/* Großer Löschen-Button */}
-          <button
-            onClick={alleZuruecksetzen}
-            className="w-full bg-red-500 hover:bg-red-600 py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-lg shadow-lg active:scale-95 transition-all"
-          >
-            <Trash2 className="w-6 h-6" />
-            Alle Plätze leeren
-          </button>
+          {/* Löschen-Buttons */}
+<div className="flex gap-2">
+  <button
+    onClick={alleZuruecksetzen}
+    className="flex-1 bg-red-500 hover:bg-red-600 py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-lg shadow-lg active:scale-95 transition-all"
+  >
+    <Trash2 className="w-6 h-6" />
+    Plätze leeren
+  </button>
+  <button
+    onClick={speicherLeeren}
+    className="bg-orange-500 hover:bg-orange-600 px-4 py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-all"
+    title="Speicher leeren (alle Kühe wieder verfügbar)"
+  >
+    🔄
+  </button>
+</div>
         </div>
 
         {/* Kuh-Liste - kompakt unter Header */}
