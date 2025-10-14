@@ -24,6 +24,7 @@ model Kuh {
   abgekalbt_am          DateTime?
 
   klauenpflege          Boolean   @default(false)
+  aussortiert           Boolean   @default(false)
   
   notizen               String?
   

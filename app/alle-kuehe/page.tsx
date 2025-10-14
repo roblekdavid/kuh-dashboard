@@ -27,7 +27,8 @@ export default function AlleKuehePage() {
   const [showGrenzwerte, setShowGrenzwerte] = useState(false);
   const [grenzwerte, setGrenzwerte] = useState<Grenzwerte>({ ideal: 60, min: 50, max: 70 });
   const [showFehlgeburt, setShowFehlgeburt] = useState(false);
-
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [isStale, setIsStale] = useState(false);
   useEffect(() => {
     loadKuehe();
     loadGrenzwerte();
@@ -36,6 +37,82 @@ export default function AlleKuehePage() {
   useEffect(() => {
     filterAndSortKuehe();
   }, [kuehe, searchTerm, statusFilter]);
+  // 1. Automatischer Refresh um 03:00 Uhr
+useEffect(() => {
+  const checkAndRefresh = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    
+    if (hours === 3 && minutes === 0) {
+      console.log('🕒 Automatischer Refresh um 03:00 Uhr');
+      loadKuehe();
+      setLastActivity(Date.now());
+      setIsStale(false);
+    }
+  };
+  
+  const interval = setInterval(checkAndRefresh, 60000);
+  return () => clearInterval(interval);
+}, []);
+
+// 2. Markiere als "stale" nach 30 Minuten Inaktivität
+useEffect(() => {
+  const checkStale = () => {
+    const inactiveMinutes = (Date.now() - lastActivity) / (1000 * 60);
+    if (inactiveMinutes > 30 && !isStale) {
+      console.log('⏱️ App als "stale" markiert nach 30 Min Inaktivität');
+      setIsStale(true);
+    }
+  };
+  
+  const interval = setInterval(checkStale, 60000);
+  return () => clearInterval(interval);
+}, [lastActivity, isStale]);
+
+// 3. Reload bei Interaktion wenn stale
+useEffect(() => {
+  const handleActivity = () => {
+    if (isStale) {
+      console.log('🔄 Lade neue Daten nach Inaktivität');
+      loadKuehe();
+      setIsStale(false);
+    }
+    setLastActivity(Date.now());
+  };
+  
+  window.addEventListener('click', handleActivity);
+  window.addEventListener('touchstart', handleActivity);
+  window.addEventListener('keydown', handleActivity);
+  
+  return () => {
+    window.removeEventListener('click', handleActivity);
+    window.removeEventListener('touchstart', handleActivity);
+    window.removeEventListener('keydown', handleActivity);
+  };
+}, [isStale]);
+
+// 4. Reload bei Tab-Wechsel zurück nach Inaktivität
+useEffect(() => {
+  let lastVisibilityChange = Date.now();
+  
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      const inactiveMinutes = (Date.now() - lastVisibilityChange) / (1000 * 60);
+      
+      if (inactiveMinutes > 30) {
+        console.log('🔄 Lade neue Daten nach Tab-Wechsel');
+        loadKuehe();
+        setLastActivity(Date.now());
+        setIsStale(false);
+      }
+    }
+    lastVisibilityChange = Date.now();
+  };
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+}, []);
 
   const loadKuehe = async () => {
     try {
@@ -79,28 +156,70 @@ export default function AlleKuehePage() {
           case 'kalbin': return !k.abgekalbt_am;
           case 'trocken': return k.trockengestellt_am !== null;
           case 'traechtig': return k.kontroll_status === 'positiv';
-          case 'klauenpflege': return k.klauenpflege;
+          case 'nicht_traechtig': {
+            // Aussortierte Kühe nicht anzeigen
+            if (k.aussortiert) return false;
+            
+            // Kühe die nicht trächtig sind
+            if (k.abgekalbt_am) {
+              return k.kontroll_status !== 'positiv';
+            }
+            // Kalbinnen über 16 Monate die nicht trächtig sind
+            if (!k.abgekalbt_am && k.geburtsdatum) {
+              const alterMonate = getAlterInMonaten(parseDate(k.geburtsdatum)!);
+              return alterMonate > 16 && k.kontroll_status !== 'positiv';
+            }
+            return false;
+          }
+          case 'traechtige_kalbin': return !k.abgekalbt_am && k.kontroll_status === 'positiv';
           default: return true;
         }
       });
     }
 
-    // SORTIERUNG: Tiere bei denen am längsten keine Brunst beobachtet wurde zuerst
-    filtered.sort((a, b) => {
-      // Kalbinnen nach Alter sortieren
-      if (!a.abgekalbt_am && !b.abgekalbt_am) {
-        if (!a.geburtsdatum || !b.geburtsdatum) return 0;
-        return parseDate(b.geburtsdatum)!.getTime() - parseDate(a.geburtsdatum)!.getTime();
-      }
-      
-      // Kühe nach Tagen seit Abkalben
-      if (a.abgekalbt_am && b.abgekalbt_am) {
-        return parseDate(b.abgekalbt_am)!.getTime() - parseDate(a.abgekalbt_am)!.getTime();
-      }
-      
-      // Kühe vor Kalbinnen
-      return a.abgekalbt_am ? -1 : 1;
-    });
+    // SORTIERUNG
+    if (statusFilter === 'nicht_traechtig') {
+      // Spezielle Sortierung für "Nicht trächtig"
+      filtered.sort((a, b) => {
+        const aIstKalbin = !a.abgekalbt_am;
+        const bIstKalbin = !b.abgekalbt_am;
+        
+        // Kalbinnen vor Kühen
+        if (aIstKalbin && !bIstKalbin) return -1;
+        if (!aIstKalbin && bIstKalbin) return 1;
+        
+        // Beide sind Kalbinnen: Älteste zuerst
+        if (aIstKalbin && bIstKalbin) {
+          if (!a.geburtsdatum || !b.geburtsdatum) return 0;
+          return parseDate(a.geburtsdatum)!.getTime() - parseDate(b.geburtsdatum)!.getTime();
+        }
+        
+        // Beide sind Kühe: Längste Zeit seit Abkalbung zuerst
+        if (!aIstKalbin && !bIstKalbin) {
+          if (!a.abgekalbt_am || !b.abgekalbt_am) return 0;
+          return parseDate(a.abgekalbt_am)!.getTime() - parseDate(b.abgekalbt_am)!.getTime();
+        }
+        
+        return 0;
+      });
+    } else {
+      // Standard-Sortierung für andere Filter
+      filtered.sort((a, b) => {
+        // Kalbinnen nach Alter sortieren
+        if (!a.abgekalbt_am && !b.abgekalbt_am) {
+          if (!a.geburtsdatum || !b.geburtsdatum) return 0;
+          return parseDate(b.geburtsdatum)!.getTime() - parseDate(a.geburtsdatum)!.getTime();
+        }
+        
+        // Kühe nach Tagen seit Abkalben
+        if (a.abgekalbt_am && b.abgekalbt_am) {
+          return parseDate(b.abgekalbt_am)!.getTime() - parseDate(a.abgekalbt_am)!.getTime();
+        }
+        
+        // Kühe vor Kalbinnen
+        return a.abgekalbt_am ? -1 : 1;
+      });
+    }
 
     setFilteredKuehe(filtered);
   };
@@ -164,9 +283,10 @@ export default function AlleKuehePage() {
   const statusOptions = [
     { value: 'alle', label: 'Alle Kühe', color: 'bg-gray-500' },
     { value: 'kalbin', label: 'Kalbinnen', color: 'bg-pink-500' },
+    { value: 'traechtige_kalbin', label: 'Trächtige Kalbinnen', color: 'bg-purple-500' },
+    { value: 'nicht_traechtig', label: 'Nicht trächtig', color: 'bg-purple-500'},
     { value: 'traechtig', label: 'Trächtig', color: 'bg-green-500' },
     { value: 'trocken', label: 'Trockengestellt', color: 'bg-indigo-500' },
-    { value: 'klauenpflege', label: 'Klauenpflege', color: 'bg-red-500' },
   ];
 
   return (
@@ -312,6 +432,11 @@ export default function AlleKuehePage() {
                             Trächtig
                           </span>
                         )}
+                        {kuh.aussortiert && (
+                          <span className="bg-gray-700 text-white px-2 py-0.5 rounded text-xs font-semibold">
+                            Aussortiert
+                          </span>
+                        )}
                       </div>
                       <p className="text-gray-600">Nr. {kuh.tiernummer}</p>
                       {istKalbin && kuh.geburtsdatum && (
@@ -371,6 +496,7 @@ export default function AlleKuehePage() {
                       {kuh.klauenpflege ? 'Klauenpflege erledigt' : 'Klauenpflege nötig'}
                     </button>
 
+
                     {/* Fehlgeburt */}
                     {kuh.besamung_datum && (
                       <button
@@ -383,6 +509,17 @@ export default function AlleKuehePage() {
                         Fehlgeburt
                       </button>
                     )}
+                    {/* Aussortiert Toggle */}
+                    <button
+                      onClick={() => handleStatusChange(kuh.id, { aussortiert: !kuh.aussortiert })}
+                      className={`${
+                        kuh.aussortiert 
+                          ? 'bg-gray-700 hover:bg-gray-800' 
+                          : 'bg-yellow-500 hover:bg-yellow-600'
+                      } text-white px-4 py-2 rounded-xl font-semibold transition-all active:scale-95`}
+                    >
+                      {kuh.aussortiert ? '✓ Aussortiert' : 'Aussortieren'}
+                    </button>
 
                     {/* Abmelden */}
                     <button

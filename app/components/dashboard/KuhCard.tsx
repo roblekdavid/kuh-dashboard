@@ -285,6 +285,14 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
               <span className="font-semibold">Besamungsversuche: {kuh.besamung_versuche || 0}</span>
             </div>
           )}
+          {/* Letzte Besamung */}
+          {showInfo?.includes('letztes_besamung_datum') && kuh.besamung_datum && (
+            <div className="bg-blue-50 p-3 rounded-xl border-2 border-blue-200">
+              <div className="font-bold text-center text-blue-800 text-sm">
+                Letzte Besamung: {formatDate(parseDate(kuh.besamung_datum)!)}
+              </div>
+            </div>
+          )}
 
           {/* Alter für Kalbinnen */}
           {!kuh.abgekalbt_am && kuh.geburtsdatum && showInfo?.includes('brunst') && (

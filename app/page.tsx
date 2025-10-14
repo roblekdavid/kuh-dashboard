@@ -29,7 +29,9 @@ export default function KuhDashboard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [isStale, setIsStale] = useState(false);
+
   const loadKuehe = async () => {
     try {
       const res = await fetch('/api/kuehe');
@@ -141,6 +143,82 @@ useEffect(() => {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+  // 1. Automatischer Refresh um 03:00 Uhr
+useEffect(() => {
+  const checkAndRefresh = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    
+    if (hours === 3 && minutes === 0) {
+      console.log('🕒 Automatischer Refresh um 03:00 Uhr');
+      loadKuehe();
+      setLastActivity(Date.now());
+      setIsStale(false);
+    }
+  };
+  
+  const interval = setInterval(checkAndRefresh, 60000);
+  return () => clearInterval(interval);
+}, []);
+
+// 2. Markiere als "stale" nach 30 Minuten Inaktivität
+useEffect(() => {
+  const checkStale = () => {
+    const inactiveMinutes = (Date.now() - lastActivity) / (1000 * 60);
+    if (inactiveMinutes > 30 && !isStale) {
+      console.log('⏱️ App als "stale" markiert nach 30 Min Inaktivität');
+      setIsStale(true);
+    }
+  };
+  
+  const interval = setInterval(checkStale, 60000);
+  return () => clearInterval(interval);
+}, [lastActivity, isStale]);
+
+// 3. Reload bei Interaktion wenn stale
+useEffect(() => {
+  const handleActivity = () => {
+    if (isStale) {
+      console.log('🔄 Lade neue Daten nach Inaktivität');
+      loadKuehe();
+      setIsStale(false);
+    }
+    setLastActivity(Date.now());
+  };
+  
+  window.addEventListener('click', handleActivity);
+  window.addEventListener('touchstart', handleActivity);
+  window.addEventListener('keydown', handleActivity);
+  
+  return () => {
+    window.removeEventListener('click', handleActivity);
+    window.removeEventListener('touchstart', handleActivity);
+    window.removeEventListener('keydown', handleActivity);
+  };
+}, [isStale]);
+
+// 4. Reload bei Tab-Wechsel zurück nach Inaktivität
+useEffect(() => {
+  let lastVisibilityChange = Date.now();
+  
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      const inactiveMinutes = (Date.now() - lastVisibilityChange) / (1000 * 60);
+      
+      if (inactiveMinutes > 30) {
+        console.log('🔄 Lade neue Daten nach Tab-Wechsel');
+        loadKuehe();
+        setLastActivity(Date.now());
+        setIsStale(false);
+      }
+    }
+    lastVisibilityChange = Date.now();
+  };
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+}, []);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
@@ -155,6 +233,8 @@ useEffect(() => {
       icon: '👁️',
       color: 'from-blue-500 to-blue-600',
       filter: (k: Kuh) => {
+        // Aussortierte Kühe nicht anzeigen (außer sie sind trächtig)
+        if (k.aussortiert) return false;
         //Keine trächtigen Kühe
         if (k.kontroll_status === 'positiv') return false;
         // Kalbinnen älter als 14 Monate ohne bekannte Brunst
@@ -179,6 +259,7 @@ useEffect(() => {
       icon: '📅',
       color: 'from-cyan-500 to-cyan-600',
       filter: (k: Kuh) => {
+        if (k.aussortiert) return false;
         if (k.kontroll_status === 'positiv') return false;
         
         const nextBrunst = getNextBrunstForKuh(k);
@@ -190,7 +271,7 @@ useEffect(() => {
         const diffDays = Math.floor((nextBrunst.getTime() - heute.getTime()) / (1000 * 60 * 60 * 24));
         return diffDays >= -2 && diffDays <= 5;
       },
-      showInfo: ['brunst', 'brunst_datum', 'besamung_versuche']
+      showInfo: ['brunst', 'brunst_datum', 'besamung_versuche', 'letztes_besamung_datum']
     },
     
     // 3. KONTROLLE
@@ -237,12 +318,20 @@ useEffect(() => {
     {
       title: 'Klauenpflege benötigt',
       icon: '🦶',
-      color: 'from-red-500 to-red-600',
+      color: 'from-yellow-600 to-yellow-700',
       filter: (k: Kuh) => k.klauenpflege === true,
       showInfo: []
     },
+    // 7. AUSSORTIERT
+    {
+      title: 'Aussortiert',
+      icon: '⚠️',
+      color: 'from-red-500 to-red-600',
+      filter: (k: Kuh) => k.aussortiert === true,
+      showInfo: []
+    },
     
-    // 7. BELEGUNGSPLAN (6 Monate)
+    // 8. BELEGUNGSPLAN (6 Monate)
     {
       title: 'Belegungsplan',
       icon: '📆',

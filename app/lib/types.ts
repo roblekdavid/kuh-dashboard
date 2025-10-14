@@ -13,6 +13,7 @@ export interface Kuh {
   trockengestellt_am: string | null;
   abgekalbt_am: string | null;
   klauenpflege: boolean;
+  aussortiert: boolean;
   
   notizen: string | null;
 }
