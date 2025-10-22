@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kuhdashboard",
   description: "Kuh-Verwaltung und Milchmessung",
+  manifest: "/manifest.json",
   icons: {
     icon: [
       {
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
         type: 'image/svg+xml',
       }
     ],
+    apple: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }
+    ]
   },
 };
 
