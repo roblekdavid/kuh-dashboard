@@ -48,6 +48,15 @@ export default function KuhDashboard() {
     loadKuehe();
   }, []);
 
+// Helligkeit auf 100% beim Start
+  useEffect(() => {
+    fetch('/api/brightness', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brightness: 100 })
+    });
+  }, []);
+
   useEffect(() => {
     if (isAutoPlay) {
       const interval = setInterval(() => {

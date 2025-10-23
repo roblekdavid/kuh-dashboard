@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import StandbyController from './standby-controller';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kuhdashboard",
-  description: "Kuh-Verwaltung und Milchmessung",
+  title: "Kuhmonitor",
+  description: "Kuh-Verwaltung und Dashboard",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -36,9 +37,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <StandbyController />
         {children}
       </body>
     </html>
