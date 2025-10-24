@@ -11,6 +11,8 @@ import DatePickerDialog from '@/app/components/dialogs/DatePickerDialog';
 import ConfirmDialog from '@/app/components/dialogs/ConfirmDialog';
 import SuccessToast from '@/app/components/dialogs/SuccessToast';
 import KuhDetailsDialog from '@/app/components/dialogs/KuhDetailsDialog';
+import VirtualKeyboard from '../components/VirtualKeyboard';
+import { useVirtualKeyboard } from '../hooks/useVirtualKeyboard';
 
 export default function AlleKuehePage() {
   const [kuehe, setKuehe] = useState<Kuh[]>([]);
@@ -31,6 +33,7 @@ export default function AlleKuehePage() {
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [isStale, setIsStale] = useState(false);
   const [selectedKuhForDetails, setSelectedKuhForDetails] = useState<Kuh | null>(null);
+  const { showKeyboard, keyboardType, handleKeyPress, closeKeyboard } = useVirtualKeyboard();
   
   useEffect(() => {
     loadKuehe();
@@ -603,6 +606,14 @@ useEffect(() => {
         isVisible={showSuccess}
         onClose={() => setShowSuccess(false)}
       />
+            {/* Virtuelle Tastatur */}
+            {showKeyboard && (
+              <VirtualKeyboard
+                type={keyboardType}
+                onKeyPress={handleKeyPress}
+                onClose={closeKeyboard}
+              />
+            )}
     </div>
   );
 }

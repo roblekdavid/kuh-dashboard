@@ -18,6 +18,8 @@ import KuhCard from '@/app/components/dashboard/KuhCard';
 import BelegungsplanChart from '@/app/components/dashboard/BelegungsplanChart';
 import DashboardHeader from '@/app/components/dashboard/DashboardHeader';
 import SuccessToast from '@/app/components/dialogs/SuccessToast';
+import VirtualKeyboard from './components/VirtualKeyboard';
+import { useVirtualKeyboard } from './hooks/useVirtualKeyboard';
 
 export default function KuhDashboard() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -31,6 +33,7 @@ export default function KuhDashboard() {
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [isStale, setIsStale] = useState(false);
+  const { showKeyboard, keyboardType, handleKeyPress, closeKeyboard } = useVirtualKeyboard();
 
   const loadKuehe = async () => {
     try {
@@ -520,6 +523,14 @@ useEffect(() => {
           onClose={() => setShowSuccess(false)}
         />
       </div>
+      {/* Virtuelle Tastatur */}
+      {showKeyboard && (
+        <VirtualKeyboard
+          type={keyboardType}
+          onKeyPress={handleKeyPress}
+          onClose={closeKeyboard}
+        />
+      )}
     </div>
   );
 }
