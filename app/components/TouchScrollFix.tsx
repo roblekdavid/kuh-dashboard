@@ -10,22 +10,32 @@ export default function TouchScrollFix() {
     let isScrolling = false;
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Nur wenn nicht auf Input/Button geklickt
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || 
-          target.tagName === 'TEXTAREA' || 
-          target.tagName === 'SELECT' ||
-          target.tagName === 'BUTTON' ||
-          target.closest('button')) {
-        return;
-      }
+        const target = e.target as HTMLElement;
+        
+        // Inputs, Buttons und interaktive Elemente nicht blockieren
+        if (target.tagName === 'INPUT' || 
+            target.tagName === 'TEXTAREA' || 
+            target.tagName === 'SELECT' ||
+            target.tagName === 'BUTTON' ||
+            target.closest('button') ||
+            target.closest('input') ||
+            target.closest('textarea') ||
+            target.closest('select') ||
+            target.closest('[role="button"]')) {
+            return;
+        }
 
-      isMouseDown = true;
-      startY = e.clientY;
-      scrollTop = window.scrollY;
-      isScrolling = false;
-      e.preventDefault();
-    };
+        // Auch keine Dialoge/Popups scrollen
+        if (target.closest('[role="dialog"]') || target.closest('.fixed')) {
+            return;
+        }
+
+        isMouseDown = true;
+        startY = e.clientY;
+        scrollTop = window.scrollY;
+        isScrolling = false;
+        e.preventDefault();
+        };
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!isMouseDown) return;
