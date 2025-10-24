@@ -80,6 +80,7 @@ export default function KuhDetailsDialog({ kuh, onClose, onUpdate }: KuhDetailsD
   className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
   onClick={(e) => e.stopPropagation()}
   onMouseDown={(e) => e.stopPropagation()}
+  style={{ touchAction: 'pan-y' }}
 >
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-3xl flex justify-between items-center z-10">
