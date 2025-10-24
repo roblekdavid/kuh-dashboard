@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+
 
 function StandbyControllerInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [lastActivity, setLastActivity] = useState(Date.now());
 
   const isOperatingHours = () => {
@@ -28,12 +30,24 @@ function StandbyControllerInner() {
       const isOperating = isOperatingHours();
       const wakeup = searchParams.get('wakeup');
 
-      if (!isOperating && !wakeup) {
-        router.push('/standby');
-      } else if (!isOperating && wakeup) {
-        const inactive = Date.now() - lastActivity;
-        if (inactive > 15 * 60 * 1000) {
-          router.push('/standby');
+      // Nur außerhalb Betriebszeit prüfen
+      if (!isOperating) {
+        // Wenn auf Standby-Seite → nichts tun
+        if (pathname === '/standby') {
+          return;
+        }
+
+        // Wenn Wake-up aktiv → nach 15 Min Inaktivität zu Standby
+        if (wakeup) {
+          const inactive = Date.now() - lastActivity;
+          if (inactive > 15 * 60 * 1000) {
+            router.push('/standby');
+          }
+        } else {
+          // Kein Wake-up → zu Standby (nur von Hauptseite)
+          if (pathname === '/') {
+            router.push('/standby');
+          }
         }
       }
     };
@@ -43,6 +57,7 @@ function StandbyControllerInner() {
     window.addEventListener('click', handleActivity);
     window.addEventListener('touchstart', handleActivity);
     window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
 
     const interval = setInterval(checkStandby, 30000);
     checkStandby();
@@ -52,8 +67,9 @@ function StandbyControllerInner() {
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('touchstart', handleActivity);
       window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
     };
-  }, [lastActivity, router, searchParams]);
+  }, [lastActivity, router, searchParams, pathname]);
 
   return null;
 }
