@@ -265,39 +265,49 @@ useEffect(() => {
       showInfo: ['brunst', 'besamung_versuche']
     },
     
-    // 2. BRUNST NÄCHSTEN 5 TAGE
+        // 2. BRUNST NÄCHSTEN 5 TAGE
     {
       title: 'Brunst nächste 5 Tage',
       icon: '📅',
       color: 'from-cyan-500 to-cyan-600',
       filter: (k: Kuh) => {
+        // Aussortierte nie anzeigen
         if (k.aussortiert) return false;
+        
+        // Trächtige nie anzeigen
         if (k.kontroll_status === 'positiv') return false;
         
-        // Neu: Wenn heute besamt wurde, nicht mehr anzeigen
-        if (k.besamung_datum) {
+        // WICHTIG: Wenn besamt vor weniger als 19 Tagen → ausblenden
+        if (k.besamung_datum && k.letzte_brunst) {
           const besamungDatum = parseDate(k.besamung_datum);
-          if (besamungDatum) {
-            const heute = new Date();
-            heute.setHours(0, 0, 0, 0);
-            const besamungTag = new Date(besamungDatum);
-            besamungTag.setHours(0, 0, 0, 0);
-            
-            // Wenn Besamung heute oder in den letzten 3 Tagen war, nicht anzeigen
-            const diffDays = Math.floor((heute.getTime() - besamungTag.getTime()) / (1000 * 60 * 60 * 24));
-            if (diffDays >= 0 && diffDays <= 3) {
-              return false;
+          const letzteBrunstDatum = parseDate(k.letzte_brunst);
+          
+          if (besamungDatum && letzteBrunstDatum) {
+            // Wenn besamung_datum = letzte_brunst (werden immer gleichzeitig gesetzt)
+            if (besamungDatum.getTime() === letzteBrunstDatum.getTime()) {
+              const heute = new Date();
+              heute.setHours(0, 0, 0, 0);
+              const tageSeitBesamung = Math.floor((heute.getTime() - besamungDatum.getTime()) / (1000 * 60 * 60 * 24));
+              
+              // Erste 19 Tage nach Besamung → ausblenden (Brunst frühestens ab Tag 19)
+              if (tageSeitBesamung < 19) {
+                return false;
+              }
             }
           }
         }
         
+        // Berechne nächste Brunst
         const nextBrunst = getNextBrunstForKuh(k);
         if (!nextBrunst) return false;
         
         const heute = new Date();
         heute.setHours(0, 0, 0, 0);
         
+        // Tage bis zur nächsten Brunst
         const diffDays = Math.floor((nextBrunst.getTime() - heute.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Nur im Zeitfenster -2 bis +5 Tage
         return diffDays >= -2 && diffDays <= 5;
       },
       showInfo: ['brunst', 'brunst_datum', 'besamung_versuche', 'letztes_besamung_datum']

@@ -97,7 +97,7 @@ export const getNextBrunstForKuh = (kuh: Kuh): Date | null => {
   
   // Berechne nächste Brunst (in Zyklen von 21 Tagen)
   let nextBrunst = new Date(basisDatum);
-  while (nextBrunst <= heute) {
+  while (nextBrunst < heute) {
     nextBrunst = getNaechsteBrunst(nextBrunst);
   }
   
