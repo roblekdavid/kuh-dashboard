@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
+/* ==========================================
+   TOUCH & SCROLL OPTIMIERUNGEN
+   ========================================== */
+
 * {
+  box-sizing: border-box;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y pan-x;
@@ -9,28 +14,42 @@
 body, html {
   touch-action: manipulation;
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 
-/* Text-Selektion nur bei Formular-Feldern erlauben */
+/* ==========================================
+   TEXT-SELEKTION
+   ========================================== */
+
+/* Nur bei Formular-Feldern erlauben */
 input, textarea, select {
   -webkit-user-select: text !important;
   user-select: text !important;
-    touch-action: auto !important;
+  touch-action: manipulation !important;
   pointer-events: auto !important;
+  cursor: text !important;
 }
 
-/* Sonst überall verhindern */
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Überall sonst verhindern */
 body *:not(input):not(textarea):not(select) {
   -webkit-user-select: none;
   user-select: none;
 }
 
+/* ==========================================
+   FARB-VARIABLEN
+   ========================================== */
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --input-text: #374151;
+  --input-text: #1f2937;
   --placeholder-text: #9ca3af;
-  --button-text: #4b5563;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,32 +58,57 @@ body *:not(input):not(textarea):not(select) {
     --foreground: #ededed;
     --input-text: #e5e7eb;
     --placeholder-text: #6b7280;
-    --button-text: #d1d5db;
   }
 }
+
+/* ==========================================
+   GRUNDLEGENDES STYLING
+   ========================================== */
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  /* Verhindert horizontales Scrollen */
   overflow-x: hidden;
 }
 
-/* Fix für Eingabefelder und Buttons */
+/* Eingabefelder */
 input, select, textarea {
-  color: #1f2937 !important;
+  color: var(--input-text) !important;
+  font-size: 16px; /* Verhindert Zoom auf Mobile */
 }
 
-input::placeholder {
-  color: #9ca3af !important;
+input::placeholder, textarea::placeholder {
+  color: var(--placeholder-text) !important;
 }
 
+/* Buttons nutzen Tailwind/Parent-Farben */
 button {
   color: inherit;
 }
 
-/* Explizite Textfarben für bessere Lesbarkeit */
+/* ==========================================
+   MOBILE OPTIMIERUNGEN
+   ========================================== */
+
+@media (max-width: 640px) {
+  /* Besseres Touch-Target */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* ==========================================
+   UTILITY CLASSES
+   ========================================== */
+
+/* Explizite Grau-Töne für bessere Lesbarkeit */
 .text-gray-600 {
   color: #4b5563 !important;
 }
@@ -75,53 +119,4 @@ button {
 
 .text-gray-800 {
   color: #1f2937 !important;
-}
-
-/* Mobile Optimierungen */
-@media (max-width: 640px) {
-  /* Verhindert Zoom bei Input-Focus auf iOS */
-  input[type="text"],
-  input[type="number"],
-  input[type="date"],
-  input[type="email"],
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
-  
-  /* Besseres Touch-Target für Buttons */
-  button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Reduziert padding auf kleinen Bildschirmen */
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-}
-
-/* Verhindert dass Karten über den Rand hinausgehen */
-* {
-  box-sizing: border-box;
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Bessere Touch-Gesten */
-.touch-manipulation {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Verhindert Text-Selektion bei Touch */
-.no-select {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
 }
