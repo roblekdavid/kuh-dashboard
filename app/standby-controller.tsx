@@ -3,12 +3,12 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 
-
 function StandbyControllerInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [lastActivity, setLastActivity] = useState(Date.now());
+  const [isAwake, setIsAwake] = useState(false);
 
   const isOperatingHours = () => {
     const now = new Date();
@@ -26,9 +26,14 @@ function StandbyControllerInner() {
   };
 
   useEffect(() => {
+    // Wake-up State aus URL lesen
+    const wakeup = searchParams.get('wakeup');
+    if (wakeup === 'true' && !isAwake) {
+      setIsAwake(true);
+    }
+
     const checkStandby = () => {
       const isOperating = isOperatingHours();
-      const wakeup = searchParams.get('wakeup');
 
       // Nur außerhalb Betriebszeit prüfen
       if (!isOperating) {
@@ -37,14 +42,15 @@ function StandbyControllerInner() {
           return;
         }
 
-        // Wenn Wake-up aktiv → nach 15 Min Inaktivität zu Standby
-        if (wakeup) {
+        // Wenn aufgeweckt → nach 15 Min Inaktivität zu Standby
+        if (isAwake) {
           const inactive = Date.now() - lastActivity;
           if (inactive > 15 * 60 * 1000) {
+            setIsAwake(false);
             router.push('/standby');
           }
         } else {
-          // Kein Wake-up → zu Standby (nur von Hauptseite)
+          // Nicht aufgeweckt → zu Standby (nur von Hauptseite)
           if (pathname === '/') {
             router.push('/standby');
           }
@@ -69,7 +75,7 @@ function StandbyControllerInner() {
       window.removeEventListener('mousemove', handleActivity);
       window.removeEventListener('keydown', handleActivity);
     };
-  }, [lastActivity, router, searchParams, pathname]);
+  }, [lastActivity, router, searchParams, pathname, isAwake]);
 
   return null;
 }
