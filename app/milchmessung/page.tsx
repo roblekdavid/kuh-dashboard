@@ -173,6 +173,8 @@ export default function MilchmessungPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
               <input
                 type="text"
+                inputMode="text"
+                autoComplete="off"
                 placeholder={`Kuh für Platz ${selectedPlatz} suchen...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

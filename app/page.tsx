@@ -271,6 +271,23 @@ useEffect(() => {
         if (k.aussortiert) return false;
         if (k.kontroll_status === 'positiv') return false;
         
+        // Neu: Wenn heute besamt wurde, nicht mehr anzeigen
+        if (k.besamung_datum) {
+          const besamungDatum = parseDate(k.besamung_datum);
+          if (besamungDatum) {
+            const heute = new Date();
+            heute.setHours(0, 0, 0, 0);
+            const besamungTag = new Date(besamungDatum);
+            besamungTag.setHours(0, 0, 0, 0);
+            
+            // Wenn Besamung heute oder in den letzten 3 Tagen war, nicht anzeigen
+            const diffDays = Math.floor((heute.getTime() - besamungTag.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 3) {
+              return false;
+            }
+          }
+        }
+        
         const nextBrunst = getNextBrunstForKuh(k);
         if (!nextBrunst) return false;
         

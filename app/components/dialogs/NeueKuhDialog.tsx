@@ -117,6 +117,8 @@ export default function NeueKuhDialog({ isOpen, onClose, onSuccess }: NeueKuhDia
           
           <input
             type="text"
+            inputMode="text"
+            autoComplete="off"
             placeholder="Name *"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -125,6 +127,8 @@ export default function NeueKuhDialog({ isOpen, onClose, onSuccess }: NeueKuhDia
           
           <input
             type="text"
+            inputMode="text"
+            autoComplete="off"
             placeholder="Tiernummer *"
             value={tiernummer}
             onChange={(e) => setTiernummer(e.target.value)}

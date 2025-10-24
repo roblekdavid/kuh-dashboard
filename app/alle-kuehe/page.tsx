@@ -10,6 +10,7 @@ import AbgangDialog from '@/app/components/dialogs/AbgangDialog';
 import DatePickerDialog from '@/app/components/dialogs/DatePickerDialog';
 import ConfirmDialog from '@/app/components/dialogs/ConfirmDialog';
 import SuccessToast from '@/app/components/dialogs/SuccessToast';
+import KuhDetailsDialog from '@/app/components/dialogs/KuhDetailsDialog';
 
 export default function AlleKuehePage() {
   const [kuehe, setKuehe] = useState<Kuh[]>([]);
@@ -29,6 +30,8 @@ export default function AlleKuehePage() {
   const [showFehlgeburt, setShowFehlgeburt] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [isStale, setIsStale] = useState(false);
+  const [selectedKuhForDetails, setSelectedKuhForDetails] = useState<Kuh | null>(null);
+  
   useEffect(() => {
     loadKuehe();
     loadGrenzwerte();
@@ -376,6 +379,8 @@ useEffect(() => {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 w-5 h-5" />
               <input
                 type="text"
+                inputMode="text"
+                autoComplete="off"
                 placeholder="Suche nach Name oder Nummer..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -413,7 +418,7 @@ useEffect(() => {
             const tageSeitAbkalben = kuh.abgekalbt_am ? getDaysSince(parseDate(kuh.abgekalbt_am)!) : 0;
 
             return (
-              <div key={kuh.id} className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-all overflow-hidden">
+              <div key={kuh.id} onClick={() => setSelectedKuhForDetails(kuh)} className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-all overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className={`text-4xl ${istKalbin ? 'bg-pink-100' : 'bg-blue-100'} w-14 h-14 rounded-xl flex items-center justify-center`}>
@@ -541,6 +546,16 @@ useEffect(() => {
       </div>
 
       {/* Dialoge */}
+      {selectedKuhForDetails && (
+        <KuhDetailsDialog
+          kuh={selectedKuhForDetails}
+          onClose={() => setSelectedKuhForDetails(null)}
+          onUpdate={() => {
+            loadKuehe();
+            setSelectedKuhForDetails(null);
+          }}
+        />
+      )}
       <NeueKuhDialog
         isOpen={showNeueKuh}
         onClose={() => setShowNeueKuh(false)}

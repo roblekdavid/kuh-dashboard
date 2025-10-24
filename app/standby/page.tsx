@@ -7,32 +7,33 @@ export default function StandbyPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Monitor dimmen beim Laden
-    fetch('/api/brightness', {
+  const handleWakeup = async () => {
+    // Monitor hell machen
+    await fetch('/api/brightness', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brightness: 0 })
+      body: JSON.stringify({ brightness: 100 })
     });
 
-    const handleWakeup = () => {
-      // Monitor wieder hell beim Touch
-      fetch('/api/brightness', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brightness: 100 })
-      }).then(() => {
-        router.push('/?wakeup=true');
-      });
-    };
+    // Zur App navigieren
+    router.push('/?wakeup=true');
+  };
 
-    window.addEventListener('click', handleWakeup);
-    window.addEventListener('touchstart', handleWakeup);
+  // Sofort beim ersten Touch starten
+  const handleTouch = (e: TouchEvent | MouseEvent) => {
+    handleWakeup();
+  };
 
-    return () => {
-      window.removeEventListener('click', handleWakeup);
-      window.removeEventListener('touchstart', handleWakeup);
-    };
-  }, [router]);
+  window.addEventListener('click', handleTouch);
+  window.addEventListener('touchstart', handleTouch);
+  window.addEventListener('mousedown', handleTouch); // Für Touch-als-Mouse
+
+  return () => {
+    window.removeEventListener('click', handleTouch);
+    window.removeEventListener('touchstart', handleTouch);
+    window.removeEventListener('mousedown', handleTouch);
+  };
+}, [router]);
 
   return (
     <div style={{
