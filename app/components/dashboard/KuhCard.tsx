@@ -286,10 +286,12 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
             </div>
           )}
           {/* Letzte Besamung */}
-          {showInfo?.includes('letztes_besamung_datum') && kuh.besamung_datum && (
+          {showInfo?.includes('letztes_besamung_datum') && (
             <div className="bg-blue-50 p-3 rounded-xl border-2 border-blue-200">
               <div className="font-bold text-center text-blue-800 text-sm">
-                Letzte Besamung: {formatDate(parseDate(kuh.besamung_datum)!)}
+                Letzte Besamung: {kuh.besamung_datum 
+    ? formatDate(parseDate(kuh.besamung_datum)!) 
+    : 'nicht besamt'}
               </div>
             </div>
           )}
@@ -304,7 +306,7 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
           {/* Tage seit Abkalben */}
           {kuh.abgekalbt_am && showInfo?.includes('brunst') && (
             <div className="text-sm text-gray-600">
-              <span>Abgekalbt vor: {getDaysSince(parseDate(kuh.abgekalbt_am)!)} Tagen</span>
+              <span>Abgekalbt am: {formatDate(parseDate(kuh.abgekalbt_am)!)} (vor {getDaysSince(parseDate(kuh.abgekalbt_am)!)} Tagen)</span>
             </div>
           )}
 

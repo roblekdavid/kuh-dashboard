@@ -387,10 +387,10 @@ useEffect(() => {
                 <button
                   key={option.value}
                   onClick={() => setStatusFilter(option.value)}
-                  className={`px-4 py-3 rounded-xl font-semibold transition-all ${
+                  className={`px-4 py-3 rounded-xl font-bold transition-all text-lg ${
                     statusFilter === option.value 
-                      ? `${option.color} text-white shadow-lg` 
-                      : 'bg-white/20 hover:bg-white/30'
+                      ? `${option.color} !text-white shadow-lg` 
+                      : 'bg-white !text-black hover:bg-gray-100'
                   }`}
                 >
                   {option.label}

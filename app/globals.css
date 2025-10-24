@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
+* {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y pan-x;
+}
+
+body, html {
+  touch-action: manipulation;
+  overscroll-behavior: contain;
+}
+
+/* Text-Selektion nur bei Formular-Feldern erlauben */
+input, textarea, select {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+    touch-action: auto !important;
+  pointer-events: auto !important;
+}
+
+/* Sonst überall verhindern */
+body *:not(input):not(textarea):not(select) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -28,15 +53,15 @@ body {
 
 /* Fix für Eingabefelder und Buttons */
 input, select, textarea {
-  color: var(--input-text) !important;
+  color: #1f2937 !important;
 }
 
 input::placeholder {
-  color: var(--placeholder-text) !important;
+  color: #9ca3af !important;
 }
 
 button {
-  color: var(--button-text);
+  color: inherit;
 }
 
 /* Explizite Textfarben für bessere Lesbarkeit */
