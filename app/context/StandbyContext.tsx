@@ -88,7 +88,29 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
 
     return () => clearInterval(interval);
   }, [isStandby, wakeUpTime, isTouchMonitor]);
+    // Monitor-Helligkeit steuern (nur auf Touch-Monitor)
+  useEffect(() => {
+    if (!isTouchMonitor) return;
 
+    const setBrightness = async (value: number) => {
+      try {
+        await fetch('/api/brightness', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brightness: value })
+        });
+        console.log(`💡 Helligkeit auf ${value}% gesetzt`);
+      } catch (error) {
+        console.error('Fehler beim Setzen der Helligkeit:', error);
+      }
+    };
+
+    if (isStandby) {
+      setBrightness(0);  // Standby → dunkel
+    } else {
+      setBrightness(100);  // Wach → hell
+    }
+  }, [isStandby, isTouchMonitor]);
   return (
     <StandbyContext.Provider value={{ isStandby, setStandby: setIsStandby }}>
       {children}
