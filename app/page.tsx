@@ -271,6 +271,15 @@ useEffect(() => {
       icon: '📅',
       color: 'from-cyan-500 to-cyan-600',
       filter: (k: Kuh) => {
+        // Debug für eine spezifische Kuh
+        if (k.tiernummer === '3734') {  // ← ERSETZE mit echter Nummer
+          console.log('=== DEBUG KALBIN ===');
+          console.log('Name:', k.name);
+          console.log('Aussortiert:', k.aussortiert);
+          console.log('Kontrollstatus:', k.kontroll_status);
+          console.log('Besamung:', k.besamung_datum);
+          console.log('Letzte Brunst:', k.letzte_brunst);
+        }
         // Aussortierte nie anzeigen
         if (k.aussortiert) return false;
         
