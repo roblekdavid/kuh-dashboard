@@ -31,8 +31,10 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
   // Activity Handler
   useEffect(() => {
     const handleActivity = () => {
+        console.log('🔥 ACTIVITY DETECTED, isStandby:', isStandby);
       setLastActivity(Date.now());
       if (isStandby) {
+        console.log('✅ WAKING UP FROM STANDBY');
         setIsStandby(false);
       }
     };
@@ -78,10 +80,18 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
       {/* Globaler Standby-Overlay */}
       {isStandby && (
         <div 
-          className="fixed inset-0 bg-black z-[10000] cursor-none"
-          onClick={() => setIsStandby(false)}
-          onTouchStart={() => setIsStandby(false)}
-        />
+    className="fixed inset-0 bg-black z-[10000] cursor-none"
+    onClick={(e) => {
+      console.log('🖱️ OVERLAY CLICKED');  // ← HINZUFÜGEN
+      e.stopPropagation();
+      setIsStandby(false);
+    }}
+    onTouchStart={(e) => {
+      console.log('👆 OVERLAY TOUCHED');  // ← HINZUFÜGEN
+      e.stopPropagation();
+      setIsStandby(false);
+    }}
+  />
       )}
     </StandbyContext.Provider>
   );
