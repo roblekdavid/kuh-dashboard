@@ -297,7 +297,9 @@ useEffect(() => {
               const heute = new Date();
               heute.setHours(0, 0, 0, 0);
               const tageSeitBesamung = Math.floor((heute.getTime() - besamungDatum.getTime()) / (1000 * 60 * 60 * 24));
-              
+              console.log('Tage seit Besamung:', tageSeitBesamung);
+              console.log('Wird durch <19 ausgeblendet?', tageSeitBesamung < 19);
+    
               // Erste 19 Tage nach Besamung → ausblenden (Brunst frühestens ab Tag 19)
               if (tageSeitBesamung < 19) {
                 return false;
@@ -308,6 +310,7 @@ useEffect(() => {
         
         // Berechne nächste Brunst
         const nextBrunst = getNextBrunstForKuh(k);
+        console.log('Nächste Brunst:', nextBrunst);console.log('Nächste Brunst:', nextBrunst);
         if (!nextBrunst) return false;
         
         const heute = new Date();
@@ -315,7 +318,8 @@ useEffect(() => {
         
         // Tage bis zur nächsten Brunst
         const diffDays = Math.floor((nextBrunst.getTime() - heute.getTime()) / (1000 * 60 * 60 * 24));
-        
+        console.log('Diff Days:', diffDays);
+      console.log('Im Zeitfenster -2 bis +5?', diffDays >= -2 && diffDays <= 5);
         // Nur im Zeitfenster -2 bis +5 Tage
         return diffDays >= -2 && diffDays <= 5;
       },
