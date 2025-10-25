@@ -278,7 +278,7 @@ useEffect(() => {
       color: 'from-cyan-500 to-cyan-600',
       filter: (k: Kuh) => {
         // Debug für eine spezifische Kuh
-        if (k.tiernummer === '3733') {  // ← ERSETZE mit echter Nummer
+        if (k.tiernummer === '0990') {  // ← ERSETZE mit echter Nummer
           console.log('=== DEBUG KALBIN ===');
           console.log('Name:', k.name);
           console.log('Aussortiert:', k.aussortiert);
