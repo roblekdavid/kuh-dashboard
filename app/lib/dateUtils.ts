@@ -97,11 +97,11 @@ export const getNextBrunstForKuh = (kuh: Kuh): Date | null => {
   
   // Berechne nächste Brunst (in Zyklen von 21 Tagen)
   let nextBrunst = new Date(basisDatum);
-  const zeitfensterStart = addDays(heute, -2); // Berücksichtige Dashboard-Zeitfenster
+const zeitfensterEnde = addDays(heute, -5); // Nur überspringen wenn Zeitfenster-Ende vorbei
 
-  while (nextBrunst < zeitfensterStart) {
-    nextBrunst = getNaechsteBrunst(nextBrunst);
-  }
+while (addDays(nextBrunst, 5) < heute) {  // Zeitfenster-Ende = Brunst + 5 Tage
+  nextBrunst = getNaechsteBrunst(nextBrunst);
+}
   
   return nextBrunst;
 };
