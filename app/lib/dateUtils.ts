@@ -99,7 +99,7 @@ export const getNextBrunstForKuh = (kuh: Kuh): Date | null => {
   let nextBrunst = new Date(basisDatum);
 const zeitfensterEnde = addDays(heute, -5); // Nur überspringen wenn Zeitfenster-Ende vorbei
 
-while (addDays(nextBrunst, 5) < heute) {  // Zeitfenster-Ende = Brunst + 5 Tage
+while (addDays(nextBrunst, 2) < heute) {  // Zeitfenster-Ende = Brunst + 5 Tage
   nextBrunst = getNaechsteBrunst(nextBrunst);
 }
   

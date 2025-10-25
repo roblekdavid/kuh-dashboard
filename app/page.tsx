@@ -325,9 +325,9 @@ useEffect(() => {
         // Tage bis zur nächsten Brunst
         const diffDays = Math.floor((nextBrunst.getTime() - heute.getTime()) / (1000 * 60 * 60 * 24));
         console.log('Diff Days:', diffDays);
-      console.log('Im Zeitfenster -2 bis +5?', diffDays >= -2 && diffDays <= 5);
+      console.log('Im Zeitfenster -2 bis +2?', diffDays >= -2 && diffDays <= 5);
         // Nur im Zeitfenster -2 bis +5 Tage
-        return diffDays >= -2 && diffDays <= 5;
+        return diffDays >= -2 && diffDays <= 2;
       },
       showInfo: ['brunst', 'brunst_datum', 'besamung_versuche', 'letztes_besamung_datum']
     },
