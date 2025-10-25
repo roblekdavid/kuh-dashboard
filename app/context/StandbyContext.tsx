@@ -56,6 +56,9 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
       const isOperating = isOperatingHours();
 
       if (!isOperating && !isStandby) {
+        // Nur in Standby wenn mehr als 1 Min inaktiv
+  const inactive = Date.now() - lastActivity;
+  if (inactive < 60 * 1000) return;
         // Außerhalb Betriebszeit → Standby
         setIsStandby(true);
       } else if (!isOperating && isStandby) {
@@ -78,21 +81,25 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
       {children}
       
       {/* Globaler Standby-Overlay */}
-      {isStandby && (
-        <div 
+{isStandby && (
+  <div 
     className="fixed inset-0 bg-black z-[10000] cursor-none"
     onClick={(e) => {
-      console.log('🖱️ OVERLAY CLICKED');  // ← HINZUFÜGEN
-      e.stopPropagation();
+      console.log('🖱️ OVERLAY CLICKED');
+      e.stopPropagation();  // Verhindert globalen Listener
+      e.preventDefault();
       setIsStandby(false);
+      setLastActivity(Date.now());  // ← HINZUFÜGEN - Reset Activity
     }}
     onTouchStart={(e) => {
-      console.log('👆 OVERLAY TOUCHED');  // ← HINZUFÜGEN
-      e.stopPropagation();
+      console.log('👆 OVERLAY TOUCHED');
+      e.stopPropagation();  // Verhindert globalen Listener
+      e.preventDefault();
       setIsStandby(false);
+      setLastActivity(Date.now());  // ← HINZUFÜGEN - Reset Activity
     }}
   />
-      )}
+)}
     </StandbyContext.Provider>
   );
 }
