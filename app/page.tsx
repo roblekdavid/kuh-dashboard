@@ -20,6 +20,7 @@ import DashboardHeader from '@/app/components/dashboard/DashboardHeader';
 import SuccessToast from '@/app/components/dialogs/SuccessToast';
 import VirtualKeyboard from './components/VirtualKeyboard';
 import { useVirtualKeyboard } from './hooks/useVirtualKeyboard';
+import { useStandby } from './context/StandbyContext';
 
 export default function KuhDashboard() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -34,6 +35,7 @@ export default function KuhDashboard() {
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [isStale, setIsStale] = useState(false);
   const { showKeyboard, keyboardType, handleKeyPress, closeKeyboard } = useVirtualKeyboard();
+  const { isStandby } = useStandby();
 
   const loadKuehe = async () => {
     try {
@@ -51,30 +53,34 @@ export default function KuhDashboard() {
     loadKuehe();
   }, []);
 
-// Helligkeit auf 100% beim Start
-  useEffect(() => {
-    fetch('/api/brightness', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brightness: 100 })
-    });
-  }, []);
+// Helligkeit auf 100% beim Start (nur wenn nicht Standby)
+useEffect(() => {
+  if (isStandby) return;
+  
+  fetch('/api/brightness', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ brightness: 100 })
+  });
+}, [isStandby]);
 
   useEffect(() => {
-    if (isAutoPlay) {
-      const interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % dashboards.length);
-      }, 10000); // 10 Sekunden pro Slide
-      return () => clearInterval(interval);
-    }
-  }, [isAutoPlay]);
-  useEffect(() => {
+  if (!isAutoPlay || isStandby) return;
+  
+  const interval = setInterval(() => {
+    setCurrentSlide((prev) => (prev + 1) % dashboards.length);
+  }, 10000);
+  return () => clearInterval(interval);
+}, [isAutoPlay, isStandby]);
+useEffect(() => {
+  if (isStandby) return;
+  
   const timer = setTimeout(() => {
     setIsAutoPlay(true);
-  }, 30 * 60 * 1000); // 30 Minuten
+  }, 30 * 60 * 1000);
 
   return () => clearTimeout(timer);
-}, []);
+}, [isStandby]);
 // Pause bei Klick/Touch in die App
 useEffect(() => {
   const handleInteraction = () => {

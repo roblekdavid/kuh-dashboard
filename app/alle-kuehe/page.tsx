@@ -387,7 +387,7 @@ useEffect(() => {
                 placeholder="Suche nach Name oder Nummer..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-gray-800/80 backdrop-blur-sm rounded-xl text-white placeholder-white/80 focus:bg-gray-800/90 transition-all font-semibold text-lg border-2 border-white/20"
+                className="w-full pl-12 pr-4 py-3 bg-gray-800/80 backdrop-blur-sm rounded-xl !text-white placeholder-white/80 focus:bg-gray-800/90 transition-all font-semibold text-lg border-2 border-white/20"
               />
             </div>
             <div className="flex gap-2 flex-wrap">

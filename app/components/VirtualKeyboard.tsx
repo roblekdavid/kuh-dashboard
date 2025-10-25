@@ -92,7 +92,7 @@ export default function VirtualKeyboard({ onKeyPress, onClose, type }: VirtualKe
                     ${isDelete ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white' : ''}
                     ${isSpace ? 'bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white' : ''}
                     ${isShift ? `${uppercase ? 'bg-blue-600' : 'bg-gray-600'} hover:bg-blue-700 active:bg-blue-800 text-white` : ''}
-                    ${!isSpecial ? 'bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-white border-2 border-gray-600' : ''}
+                    ${!isSpecial ? 'bg-gray-700 hover:bg-gray-600 active:bg-gray-500 !text-white border-2 border-gray-600' : ''}
                   `}
                 >
                   {isDelete ? <Delete className="w-5 h-5" /> : 
