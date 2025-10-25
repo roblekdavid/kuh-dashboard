@@ -293,23 +293,16 @@ useEffect(() => {
         if (k.kontroll_status === 'positiv') return false;
         
         // WICHTIG: Wenn besamt vor weniger als 19 Tagen → ausblenden
-        if (k.besamung_datum && k.letzte_brunst) {
-          const besamungDatum = parseDate(k.besamung_datum);
+        // Wenn letzte Brunst vor weniger als 19 Tagen → ausblenden (egal ob besamt oder nur beobachtet)
+        if (k.letzte_brunst) {
           const letzteBrunstDatum = parseDate(k.letzte_brunst);
-          
-          if (besamungDatum && letzteBrunstDatum) {
-            // Wenn besamung_datum = letzte_brunst (werden immer gleichzeitig gesetzt)
-            if (besamungDatum.getTime() === letzteBrunstDatum.getTime()) {
-              const heute = new Date();
-              heute.setHours(0, 0, 0, 0);
-              const tageSeitBesamung = Math.floor((heute.getTime() - besamungDatum.getTime()) / (1000 * 60 * 60 * 24));
-              console.log('Tage seit Besamung:', tageSeitBesamung);
-              console.log('Wird durch <19 ausgeblendet?', tageSeitBesamung < 19);
-    
-              // Erste 19 Tage nach Besamung → ausblenden (Brunst frühestens ab Tag 19)
-              if (tageSeitBesamung < 19) {
-                return false;
-              }
+          if (letzteBrunstDatum) {
+            const heute = new Date();
+            heute.setHours(0, 0, 0, 0);
+            const tageSeitBrunst = Math.floor((heute.getTime() - letzteBrunstDatum.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (tageSeitBrunst < 19) {
+              return false;
             }
           }
         }
