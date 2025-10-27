@@ -144,6 +144,7 @@ export default function NeueKuhDialog({ isOpen, onClose, onSuccess }: NeueKuhDia
               value={geburtsdatum}
               onChange={(e) => setGeburtsdatum(e.target.value)}
               className="w-full px-4 py-3 border-2 rounded-xl text-gray-700 focus:border-blue-500 focus:outline-none"
+              onFocus={(e) => e.target.blur()}
             />
           </div>
         </div>
@@ -161,6 +162,7 @@ export default function NeueKuhDialog({ isOpen, onClose, onSuccess }: NeueKuhDia
               value={abgekalbtAm}
               onChange={(e) => setAbgekalbtAm(e.target.value)}
               className="w-full px-4 py-3 border-2 rounded-xl text-gray-700 focus:border-blue-500 focus:outline-none"
+              onFocus={(e) => e.target.blur()}
             />
           </div>
           
@@ -173,6 +175,7 @@ export default function NeueKuhDialog({ isOpen, onClose, onSuccess }: NeueKuhDia
               value={besamungDatum}
               onChange={(e) => setBesamungDatum(e.target.value)}
               className="w-full px-4 py-3 border-2 rounded-xl text-gray-700 focus:border-blue-500 focus:outline-none"
+              onFocus={(e) => e.target.blur()}
             />
           </div>
           

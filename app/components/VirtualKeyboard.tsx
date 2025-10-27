@@ -24,7 +24,7 @@ export default function VirtualKeyboard({ onKeyPress, onClose, type }: VirtualKe
     ['Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P', 'Ü'],
     ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ö', 'Ä'],
     ['⇧', 'Y', 'X', 'C', 'V', 'B', 'N', 'M', '⌫'],
-    ['LEER', '✓']
+    ['LEER', '↵', '✓']
   ];
 
   const handleKeyClick = (key: string) => {
@@ -35,6 +35,9 @@ export default function VirtualKeyboard({ onKeyPress, onClose, type }: VirtualKe
     } else if (key === 'LEER') {
       onKeyPress(' ');
       setUppercase(true); // Nach Leerzeichen wieder Großbuchstaben
+    } else if (key === '↵') {
+      onKeyPress('\n'); // Enter = Zeilenumbruch
+      setUppercase(true); // Nach Enter wieder Großbuchstaben
     } else if (key === '⇧') {
       setUppercase(!uppercase);
     } else {
@@ -76,6 +79,7 @@ export default function VirtualKeyboard({ onKeyPress, onClose, type }: VirtualKe
               const isDelete = key === '⌫';
               const isSpace = key === 'LEER';
               const isShift = key === '⇧';
+              const isEnter = key === '↵';
               const displayKey = uppercase ? key : key.toLowerCase();
               
               return (
@@ -92,6 +96,7 @@ export default function VirtualKeyboard({ onKeyPress, onClose, type }: VirtualKe
                     ${isDelete ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white' : ''}
                     ${isSpace ? 'bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white' : ''}
                     ${isShift ? `${uppercase ? 'bg-blue-600' : 'bg-gray-600'} hover:bg-blue-700 active:bg-blue-800 text-white` : ''}
+                    ${isEnter ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white min-w-[80px]' : ''}
                     ${!isSpecial ? 'bg-gray-700 hover:bg-gray-600 active:bg-gray-500 !text-white border-2 border-gray-600' : ''}
                   `}
                 >

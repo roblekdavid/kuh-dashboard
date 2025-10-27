@@ -33,6 +33,39 @@ export function useVirtualKeyboard() {
       document.removeEventListener('focusin', handleFocus);
     };
   }, []);
+  // Tastatur schließen bei Klick außerhalb
+useEffect(() => {
+  if (!showKeyboard) return;
+
+  const handleClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    
+    // Prüfe ob auf Input/Textarea geklickt wurde
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      return; // Tastatur bleibt offen, wechselt nur den Fokus
+    }
+    
+    // Prüfe ob auf Tastatur selbst geklickt wurde
+    const keyboard = document.querySelector('[class*="fixed bottom-0"]');
+    if (keyboard && keyboard.contains(target)) {
+      return; // Klick auf Tastatur selbst - nicht schließen
+    }
+    
+    // Klick außerhalb - Tastatur schließen
+    closeKeyboard();
+  };
+
+  // Kleiner Delay damit Fokus-Event zuerst verarbeitet wird
+  setTimeout(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside as any);
+  }, 100);
+  
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+    document.removeEventListener('touchstart', handleClickOutside as any);
+  };
+}, [showKeyboard]);
 
 const handleKeyPress = (key: string) => {
     if (!activeInput) return;

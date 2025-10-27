@@ -75,7 +75,13 @@ export default function KuhCard({ kuh, showInfo, onUpdate, showKlauenpflege = fa
   heute.setHours(0, 0, 0, 0);
 
   const getAktionen = () => {
-    const aktionen: any[] = [];
+    interface Aktion {
+      label: string;
+      color: string;
+      onClick: () => void;
+    }
+
+    const aktionen: Aktion[] = [];
 
     // ==================== KLAUENPFLEGE ====================
     if (showKlauenpflege && kuh.klauenpflege) {

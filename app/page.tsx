@@ -277,15 +277,6 @@ useEffect(() => {
       icon: '📅',
       color: 'from-cyan-500 to-cyan-600',
       filter: (k: Kuh) => {
-        // Debug für eine spezifische Kuh
-        if (k.tiernummer === '0990') {  // ← ERSETZE mit echter Nummer
-          console.log('=== DEBUG KALBIN ===');
-          console.log('Name:', k.name);
-          console.log('Aussortiert:', k.aussortiert);
-          console.log('Kontrollstatus:', k.kontroll_status);
-          console.log('Besamung:', k.besamung_datum);
-          console.log('Letzte Brunst:', k.letzte_brunst);
-        }
         // Aussortierte nie anzeigen
         if (k.aussortiert) return false;
         
@@ -309,7 +300,7 @@ useEffect(() => {
         
         // Berechne nächste Brunst
         const nextBrunst = getNextBrunstForKuh(k);
-        console.log('Nächste Brunst:', nextBrunst);console.log('Nächste Brunst:', nextBrunst);
+        //console.log('Nächste Brunst:', nextBrunst);
         if (!nextBrunst) return false;
         
         const heute = new Date();
@@ -317,8 +308,8 @@ useEffect(() => {
         
         // Tage bis zur nächsten Brunst
         const diffDays = Math.floor((nextBrunst.getTime() - heute.getTime()) / (1000 * 60 * 60 * 24));
-        console.log('Diff Days:', diffDays);
-      console.log('Im Zeitfenster -2 bis +2?', diffDays >= -2 && diffDays <= 5);
+        //console.log('Diff Days:', diffDays);
+        //console.log('Im Zeitfenster -2 bis +2?', diffDays >= -2 && diffDays <= 5);
         // Nur im Zeitfenster -2 bis +5 Tage
         return diffDays >= -2 && diffDays <= 2;
       },
@@ -331,14 +322,16 @@ useEffect(() => {
       icon: '🔍',
       color: 'from-orange-500 to-orange-600',
       filter: (k: Kuh) => {
-        if (!k.besamung_datum || k.kontroll_status) return false;
+        if (!k.besamung_datum) return false;
+        // Nur "positiv" und "negativ" ausschließen, "unsicher" bleibt drin
+        if (k.kontroll_status === 'positiv' || k.kontroll_status === 'negativ') return false;
         
         const daysSince = getDaysSince(parseDate(k.besamung_datum)!);
         return daysSince >= KONTROLLE_NACH_TAGEN;
       },
       showInfo: ['kontrolle']
     },
-    
+        
     // 4. TROCKENSTELLEN
     {
       title: 'Trockenstellen',

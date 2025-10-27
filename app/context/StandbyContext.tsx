@@ -12,10 +12,17 @@ const StandbyContext = createContext<StandbyContextType | undefined>(undefined);
 export function StandbyProvider({ children }: { children: ReactNode }) {
   const [isStandby, setIsStandby] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
-  const [wakeUpTime, setWakeUpTime] = useState<number | null>(null);
   
   // Prüfe ob wir auf dem Touch-Monitor sind
   const isTouchMonitor = process.env.NEXT_PUBLIC_IS_TOUCH_MONITOR === 'true';
+
+  // Grace Period: Bei Seitenaufruf 15 Min ohne Standby
+  const [pageLoadTime] = useState(Date.now());
+  
+  const isInGracePeriod = () => {
+    const minutesSinceLoad = (Date.now() - pageLoadTime) / (1000 * 60);
+    return minutesSinceLoad < 15; // 15 Minuten Grace Period
+  };
 
   const isOperatingHours = () => {
     const now = new Date();
@@ -32,63 +39,75 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
            (timeMin >= eveningStart && timeMin < eveningEnd);
   };
 
-  // Activity Handler
+  // Activity Handler - KRITISCH für Timer-Reset
   useEffect(() => {
+    if (!isTouchMonitor) return;
+    
     const handleActivity = () => {
-      console.log('🔥 ACTIVITY DETECTED, isStandby:', isStandby);
-      setLastActivity(Date.now());
+      console.log('🔥 ACTIVITY DETECTED');
+      setLastActivity(Date.now()); // ← WICHTIG: Timer zurücksetzen
+      
+      // Wenn im Standby → aufwachen
       if (isStandby) {
         console.log('✅ WAKING UP FROM STANDBY');
         setIsStandby(false);
-        setWakeUpTime(Date.now());
       }
     };
 
     window.addEventListener('click', handleActivity);
     window.addEventListener('touchstart', handleActivity);
     window.addEventListener('keydown', handleActivity);
+    window.addEventListener('mousemove', handleActivity);
 
     return () => {
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('touchstart', handleActivity);
       window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('mousemove', handleActivity);
     };
-  }, [isStandby]);
+  }, [isStandby, isTouchMonitor]);
 
-  // Standby Check
+  // Standby Check - läuft kontinuierlich
   useEffect(() => {
+    if (!isTouchMonitor) {
+      console.log('ℹ️ Nicht auf Touch-Monitor - Standby deaktiviert');
+      return;
+    }
+    
     const checkStandby = () => {
-      // Nur auf Touch-Monitor aktiv
-      if (!isTouchMonitor) {
-        console.log('ℹ️ Nicht auf Touch-Monitor - Standby deaktiviert');
+      const isOperating = isOperatingHours();
+      const minutesSinceActivity = (Date.now() - lastActivity) / (1000 * 60);
+
+      console.log(`🕐 Check: Betriebszeit=${isOperating}, InaktivMin=${minutesSinceActivity.toFixed(1)}, Standby=${isStandby}`);
+      // Grace Period: Kein Standby in den ersten 15 Min nach Seitenaufruf
+      if (isInGracePeriod() && !isStandby) {
+        console.log('🛡️ Grace Period aktiv - kein Standby');
         return;
       }
-      
-      const isOperating = isOperatingHours();
+      // FALL 1: Betriebszeit → Aus Standby aufwachen
+      if (isOperating && isStandby) {
+        console.log('⏰ Betriebszeit begonnen - Aufwachen aus Standby');
+        setIsStandby(false);
+        setLastActivity(Date.now());
+        return;
+      }
 
-      if (!isOperating && !isStandby) {
-        // Wenn aufgewacht → 10 Min Grace Period
-        if (wakeUpTime) {
-          const timeSinceWakeup = Date.now() - wakeUpTime;
-          if (timeSinceWakeup < 10 * 60 * 1000) {
-            console.log('⏳ Grace Period:', Math.round((10 * 60 * 1000 - timeSinceWakeup) / 1000), 'Sekunden verbleibend');
-            return;
-          }
-        }
-        
-        // Grace Period vorbei → Standby
-        console.log('💤 Gehe in Standby');
+      // FALL 2: Außerhalb Betriebszeit UND 10 Min inaktiv → Standby
+      if (!isOperating && !isStandby && minutesSinceActivity >= 10) {
+        console.log('💤 10 Min inaktiv außerhalb Betriebszeit - Gehe in Standby');
         setIsStandby(true);
-        setWakeUpTime(null);
+        return;
       }
     };
 
+    // Prüfe alle 30 Sekunden
     const interval = setInterval(checkStandby, 30000);
-    checkStandby();
+    checkStandby(); // Initiales Check
 
     return () => clearInterval(interval);
-  }, [isStandby, wakeUpTime, isTouchMonitor]);
-    // Monitor-Helligkeit steuern (nur auf Touch-Monitor)
+  }, [isStandby, lastActivity, isTouchMonitor]);
+
+  // Monitor-Helligkeit steuern (nur auf Touch-Monitor)
   useEffect(() => {
     if (!isTouchMonitor) return;
 
@@ -111,6 +130,7 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
       setBrightness(100);  // Wach → hell
     }
   }, [isStandby, isTouchMonitor]);
+
   return (
     <StandbyContext.Provider value={{ isStandby, setStandby: setIsStandby }}>
       {children}
@@ -125,7 +145,6 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
             e.preventDefault();
             setIsStandby(false);
             setLastActivity(Date.now());
-            setWakeUpTime(Date.now());
           }}
           onTouchStart={(e) => {
             console.log('👆 OVERLAY TOUCHED');
@@ -133,7 +152,6 @@ export function StandbyProvider({ children }: { children: ReactNode }) {
             e.preventDefault();
             setIsStandby(false);
             setLastActivity(Date.now());
-            setWakeUpTime(Date.now());
           }}
         />
       )}

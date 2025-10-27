@@ -32,19 +32,42 @@ export default function KuhDetailsDialog({ kuh, onClose, onUpdate }: KuhDetailsD
 
   const handleSave = async () => {
     try {
+      const updates: any = {
+        kontroll_status: kontrollStatus || null,
+        trockengestellt_am: trockengestelltAm ? new Date(trockengestelltAm).toISOString() : null,
+        abgekalbt_am: abgekalbtAm ? new Date(abgekalbtAm).toISOString() : null,
+        klauenpflege: klauenpflege,
+        notizen: notizen
+      };
+
+      // Besamungsdatum
+        if (besamungDatum) {
+          updates.besamung_datum = new Date(besamungDatum).toISOString();
+          
+          // IMMER letzte_brunst auf besamung_datum setzen (automatisch)
+          updates.letzte_brunst = new Date(besamungDatum).toISOString();
+          
+          // Automatisch besamung_versuche hochzählen (falls nicht manuell geändert)
+          const currentVersuche = kuh.besamung_versuche || 0;
+          const newVersuche = parseInt(besamungVersuche) || 0;
+          updates.besamung_versuche = newVersuche > currentVersuche ? newVersuche : currentVersuche + 1;
+        } else {
+        // Besamung_datum leer
+        updates.besamung_datum = null;
+        updates.besamung_versuche = parseInt(besamungVersuche) || 0;
+        
+        // Letzte_brunst KANN trotzdem gesetzt werden!
+        if (letzteBrunst) {
+          updates.letzte_brunst = new Date(letzteBrunst).toISOString();
+        } else {
+          updates.letzte_brunst = null;
+        }
+      }
+
       await fetch(`/api/kuehe/${kuh.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          letzte_brunst: letzteBrunst ? new Date(letzteBrunst).toISOString() : null,
-          besamung_datum: besamungDatum ? new Date(besamungDatum).toISOString() : null,
-          besamung_versuche: parseInt(besamungVersuche) || 0,
-          kontroll_status: kontrollStatus || null,
-          trockengestellt_am: trockengestelltAm ? new Date(trockengestelltAm).toISOString() : null,
-          abgekalbt_am: abgekalbtAm ? new Date(abgekalbtAm).toISOString() : null,
-          klauenpflege: klauenpflege,
-          notizen: notizen
-        })
+        body: JSON.stringify(updates)
       });
       onUpdate();
       onClose();
@@ -143,6 +166,7 @@ export default function KuhDetailsDialog({ kuh, onClose, onUpdate }: KuhDetailsD
                 value={letzteBrunst}
                 onChange={(e) => setLetzteBrunst(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border-2 border-green-300 focus:border-green-500 focus:outline-none text-lg"
+                onFocus={(e) => e.target.blur()}
               />
             </div>
 
@@ -153,6 +177,7 @@ export default function KuhDetailsDialog({ kuh, onClose, onUpdate }: KuhDetailsD
                 value={besamungDatum}
                 onChange={(e) => setBesamungDatum(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border-2 border-green-300 focus:border-green-500 focus:outline-none text-lg"
+                onFocus={(e) => e.target.blur()}
               />
             </div>
 
@@ -162,6 +187,7 @@ export default function KuhDetailsDialog({ kuh, onClose, onUpdate }: KuhDetailsD
                 type="number"
                 value={besamungVersuche}
                 onChange={(e) => setBesamungVersuche(e.target.value)}
+                onFocus={(e) => e.target.select()}
                 min="0"
                 className="w-full px-4 py-3 rounded-xl border-2 border-green-300 focus:border-green-500 focus:outline-none text-lg"
                 inputMode="numeric"
@@ -189,6 +215,7 @@ export default function KuhDetailsDialog({ kuh, onClose, onUpdate }: KuhDetailsD
                 value={trockengestelltAm}
                 onChange={(e) => setTrockengestelltAm(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border-2 border-green-300 focus:border-green-500 focus:outline-none text-lg"
+                onFocus={(e) => e.target.blur()}
               />
             </div>
 
@@ -199,6 +226,7 @@ export default function KuhDetailsDialog({ kuh, onClose, onUpdate }: KuhDetailsD
                 value={abgekalbtAm}
                 onChange={(e) => setAbgekalbtAm(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border-2 border-green-300 focus:border-green-500 focus:outline-none text-lg"
+                onFocus={(e) => e.target.blur()}
               />
             </div>
 

@@ -184,7 +184,12 @@ useEffect(() => {
     }
 
     // SORTIERUNG
-    if (statusFilter === 'nicht_traechtig') {
+    if (statusFilter === 'alle') {
+      // Bei "Alle Kühe": Alphabetisch nach Namen (A-Z)
+      filtered.sort((a, b) => {
+        return a.name.localeCompare(b.name, 'de');
+      });
+    } else if (statusFilter === 'nicht_traechtig') {
       // Spezielle Sortierung für "Nicht trächtig"
       filtered.sort((a, b) => {
         const aIstKalbin = !a.abgekalbt_am;
@@ -344,6 +349,7 @@ useEffect(() => {
                     type="number"
                     value={grenzwerte.min}
                     onChange={(e) => setGrenzwerte({...grenzwerte, min: parseInt(e.target.value)})}
+                    onFocus={(e) => e.target.select()}
                     className="w-full px-3 py-2 bg-white/20 rounded-lg text-white"
                   />
                 </div>
@@ -353,6 +359,7 @@ useEffect(() => {
                     type="number"
                     value={grenzwerte.ideal}
                     onChange={(e) => setGrenzwerte({...grenzwerte, ideal: parseInt(e.target.value)})}
+                    onFocus={(e) => e.target.select()}
                     className="w-full px-3 py-2 bg-white/20 rounded-lg text-white"
                   />
                 </div>
@@ -362,6 +369,7 @@ useEffect(() => {
                     type="number"
                     value={grenzwerte.max}
                     onChange={(e) => setGrenzwerte({...grenzwerte, max: parseInt(e.target.value)})}
+                    onFocus={(e) => e.target.select()}
                     className="w-full px-3 py-2 bg-white/20 rounded-lg text-white"
                   />
                 </div>
@@ -460,13 +468,16 @@ useEffect(() => {
                     {/* Status-Aktionen basierend auf aktuellem Zustand */}
                     {!kuh.letzte_brunst && !kuh.kontroll_status && (
                       <button
-                        onClick={() => handleDateAction(kuh, {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDateAction(kuh, {
                           title: 'Brunst beobachtet',
                           message: 'Wann wurde die Brunst beobachtet?',
                           action: async (date: Date) => {
                             await handleStatusChange(kuh.id, { letzte_brunst: date.toISOString() });
                           }
-                        })}
+                        });
+                      }}
                         className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold transition-all active:scale-95"
                       >
                         Brunst beobachtet
@@ -475,7 +486,9 @@ useEffect(() => {
                     
                     {!kuh.besamung_datum && !kuh.kontroll_status && (
                       <button
-                        onClick={() => handleDateAction(kuh, {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDateAction(kuh, {
                           title: 'Besamung',
                           message: 'Wann wurde die Kuh besamt?',
                           action: async (date: Date) => {
@@ -485,7 +498,8 @@ useEffect(() => {
                               besamung_versuche: kuh.besamung_versuche + 1
                             });
                           }
-                        })}
+                        });
+                        }}
                         className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-semibold transition-all active:scale-95"
                       >
                         Besamt
@@ -494,7 +508,9 @@ useEffect(() => {
 
                     {/* Klauenpflege Toggle */}
                     <button
-                      onClick={() => handleStatusChange(kuh.id, { klauenpflege: !kuh.klauenpflege })}
+                      onClick={(e) => {
+                      e.stopPropagation();  
+                      handleStatusChange(kuh.id, { klauenpflege: !kuh.klauenpflege });}}
                       className={`${
                         kuh.klauenpflege 
                           ? 'bg-gray-500 hover:bg-gray-600' 
@@ -508,7 +524,8 @@ useEffect(() => {
                     {/* Fehlgeburt */}
                     {kuh.besamung_datum && (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setSelectedKuh(kuh);
                           setShowFehlgeburt(true);
                         }}
@@ -519,7 +536,9 @@ useEffect(() => {
                     )}
                     {/* Aussortiert Toggle */}
                     <button
-                      onClick={() => handleStatusChange(kuh.id, { aussortiert: !kuh.aussortiert })}
+                      onClick={(e) => {
+                      e.stopPropagation();
+                      handleStatusChange(kuh.id, { aussortiert: !kuh.aussortiert });}}
                       className={`${
                         kuh.aussortiert 
                           ? 'bg-gray-700 hover:bg-gray-800' 
@@ -531,7 +550,8 @@ useEffect(() => {
 
                     {/* Abmelden */}
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedKuh(kuh);
                         setShowDelete(true);
                       }}

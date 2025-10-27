@@ -66,6 +66,7 @@ export default function DatePickerDialog({
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 text-base sm:text-lg border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
+              onFocus={(e) => e.target.blur()}
             />
           </div>
         </div>
